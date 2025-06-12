@@ -148,6 +148,7 @@ px4_add_module(
 
 		# safety_state.cpp
 		# safety_state.hpp
+		Dispatcher.cpp
 		vulcan_main.cpp
 		# # Main
 		# uavcan_main.cpp

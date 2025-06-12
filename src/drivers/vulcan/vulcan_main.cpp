@@ -1,4 +1,4 @@
-#include <vulcan_main.hpp>
+#include "vulcan_main.hpp"
 // 静态成员变量定义
 VulcanNode* VulcanNode::_instance = nullptr;
 static VulcanNode::CanInitHelper * can = nullptr;
@@ -6,18 +6,28 @@ static VulcanNode::CanInitHelper * can = nullptr;
 VulcanNode::VulcanNode(uavcan::ICanDriver& can_driver, uavcan::ISystemClock& system_clock)
     : px4::ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::uavcan),
       ModuleParams(nullptr),
-      _dispatcher(can_driver, *can_driver.getAllocator(), system_clock),
+      _node(can_driver, _pool_allocator, system_clock),
       _node_init(false) {
 	// int res = pthread_mutex_init()
+    	int res = pthread_mutex_init(&_node_mutex, nullptr);
+
+	if (res < 0) {
+		std::abort();
+	}
 
 }
 
 // 析构函数
 VulcanNode::~VulcanNode() {
-    if (_instance) {
-        _task_should_exit.store(true);
-	SchedualNow();
-			do {
+        if (_instance) {
+
+		/* tell the task we want it to go away */
+		_task_should_exit.store(true);
+		ScheduleNow();
+
+		unsigned i = 10;
+
+		do {
 			/* wait 5ms - it should wake every 10ms or so worst-case */
 			usleep(5000);
 
@@ -26,7 +36,10 @@ VulcanNode::~VulcanNode() {
 			}
 
 		} while (_instance);
-    }
+	}
+
+    	pthread_mutex_destroy(&_node_mutex);
+
 	perf_free(_cycle_perf);
 	perf_free(_interval_perf);
 
@@ -34,7 +47,7 @@ VulcanNode::~VulcanNode() {
 }
 
 // 静态启动函数（单例入口）
-int VulcanNode::start(uavcan::NodeID node_id, uint32_t bitrate) {
+int VulcanNode::start(uint32_t bitrate) {
     if (_instance != nullptr) {
         PX4_WARN("VulcanNode already started");
         return -1;
@@ -69,7 +82,7 @@ void VulcanNode::Run() {
 			PX4_ERR("CAN driver init failed %i", can_init_res);
 		}
 
-		_instance->init(node_id, can->driver.updateEvent());
+		_instance->init(can->driver.updateEvent());
 
 		_node_init = true;
 
@@ -78,8 +91,11 @@ void VulcanNode::Run() {
 
 	perf_begin(_cycle_perf);
 	perf_count(_interval_perf);
-	_node.spinOnce();
-    // 执行调度器（处理 CAN 消息）
+	_node.spinOnce();   // 执行调度器（处理 CAN 消息）
+
+	constexpr hrt_abstime status_pub_interval = 100_ms;
+
+    //发布can状态消息
   if (hrt_absolute_time() - _last_can_status_pub >= status_pub_interval) {
 		_last_can_status_pub = hrt_absolute_time();
 
@@ -94,7 +110,7 @@ void VulcanNode::Run() {
 				continue;
 			}
 
-			auto iface_perf_cnt = _node..getCanIOManager().getIfacePerfCounters(i);
+			auto iface_perf_cnt = _node.getCanIOManager().getIfacePerfCounters(i);
 			can_interface_status_s status{
 				.timestamp = hrt_absolute_time(),
 				.io_errors = iface_perf_cnt.errors,
@@ -133,163 +149,234 @@ void VulcanNode::Run() {
 }
 
 // 初始化节点逻辑
-int VulcanNode::init() {
+int VulcanNode::init(UAVCAN_DRIVER::BusEvent &bus_events) {
     // 1. 初始化 CAN 驱动
-    int res = CanInitHelper::init(_dispatcher.getCanDriver(), _dispatcher.getSystemClock());
-    if (res < 0) {
-        PX4_ERR("CAN initialization failed: %d", res);
-        return res;
-    }
+    bus_events.registerSignalCallback(VulcanNode::busevent_signal_trampoline);
 
-    // 2. 初始化节点信息
-    uavcan::protocol::NodeInfo node_info;
-    node_info.setName("org.pixhawk.vulcan_node");
-    node_info.setSoftwareVersionMajor(1);
-    node_info.setHardwareVersionMajor(1);
-    _dispatcher.setNodeInfo(node_info);
-
-    // 3. 启动参数服务
-    if (_dispatcher.startParamServer() < 0) {
-        PX4_ERR("Failed to start parameter server");
-        return -1;
-    }
-
-    // 4. 注册回调函数（示例：参数更新）
-    if (_dispatcher.registerParamUpdateHandler(
-            [this](uavcan::protocol::param::GetSet::Request& req, uavcan::protocol::param::GetSet::Response& resp) {
-                this->set_param_handler(req, resp);
-            }) < 0) {
-        PX4_ERR("Failed to register parameter update handler");
-        return -1;
-    }
-
-    PX4_INFO("VulcanNode initialized");
-    return 0;
+    return OK;
 }
 
 // 打印调试信息
 void VulcanNode::print_info() {
-    PX4_INFO("VulcanNode Status:");
-    PX4_INFO(" - Node ID: %d", _dispatcher.getNodeID().get());
-    PX4_INFO(" - CAN Bitrate: %lu bps", static_cast<unsigned long>(_dispatcher.getBitrate()));
-    PX4_INFO(" - Parameters: %d registered", _dispatcher.getNumParams());
+    	(void)pthread_mutex_lock(&_node_mutex);
+
+	// Memory status
+	printf("Pool allocator status:\n");
+	printf("\tCapacity hard/soft: %" PRIu16 "/%" PRIu16 " blocks\n",
+	       _pool_allocator.getBlockCapacityHardLimit(), _pool_allocator.getBlockCapacity());
+	printf("\tReserved:  %" PRIu16 " blocks\n", _pool_allocator.getNumReservedBlocks());
+	printf("\tAllocated: %" PRIu16 " blocks\n", _pool_allocator.getNumAllocatedBlocks());
+
+	printf("\n");
+
+	// UAVCAN node perfcounters
+	// printf("VULCAN node status:\n");
+	// printf("\tInternal failures: %" PRIu64 "\n", _node.getInternalFailureCount());
+	// printf("\tTransfer errors:   %" PRIu64 "\n", _node.getTransferPerfCounter().getErrorCount());
+	// printf("\tRX transfers:      %" PRIu64 "\n", _node.getTransferPerfCounter().getRxTransferCount());
+	// printf("\tTX transfers:      %" PRIu64 "\n", _node.getTransferPerfCounter().getTxTransferCount());
+
+	printf("\n");
+
+	// CAN driver status
+	for (unsigned i = 0; i < _node.getCanIOManager().getCanDriver().getNumIfaces(); i++) {
+		printf("CAN%u status:\n", unsigned(i + 1));
+
+		auto iface = _node.getCanIOManager().getCanDriver().getIface(i);
+
+		if (iface) {
+			printf("\tHW errors: %" PRIu64 "\n", iface->getErrorCount());
+
+			auto iface_perf_cnt = _node.getCanIOManager().getIfacePerfCounters(i);
+			printf("\tIO errors: %" PRIu64 "\n", iface_perf_cnt.errors);
+			printf("\tRX frames: %" PRIu64 "\n", iface_perf_cnt.frames_rx);
+			printf("\tTX frames: %" PRIu64 "\n", iface_perf_cnt.frames_tx);
+		}
+	}
+
+	printf("\n");
+
+// #if defined(CONFIG_UAVCAN_OUTPUTS_CONTROLLER)
+// 	printf("ESC outputs:\n");
+// 	_mixing_interface_esc.mixingOutput().printStatus();
+
+// 	printf("Servo outputs:\n");
+// 	_mixing_interface_servo.mixingOutput().printStatus();
+// #endif
+
+// 	printf("\n");
+
+// 	// Sensor bridges
+// 	for (const auto &br : _sensor_bridges) {
+// 		printf("Sensor '%s':\n", br->get_name());
+// 		br->print_status();
+// 		printf("\n");
+// 	}
+
+// 	// Printing all nodes that are online
+// 	printf("Online nodes (Node ID, Health, Mode):\n");
+// 	_node_status_monitor.forEachNode([](uavcan::NodeID nid, uavcan::NodeStatusMonitor::NodeStatus ns) {
+// 		static constexpr const char *HEALTH[] = {"OK", "WARN", "ERR", "CRIT"};
+// 		static constexpr const char *MODES[] = {"OPERAT", "INIT", "MAINT", "SW_UPD", "?", "?", "?", "OFFLN"};
+// 		printf("\t% 3d %-10s %-10s\n", int(nid.get()), HEALTH[ns.health], MODES[ns.mode]);
+// 	});
+
+// 	printf("\n");
+
+	perf_print_counter(_cycle_perf);
+	perf_print_counter(_interval_perf);
+
+
+    (void)pthread_mutex_unlock(&_node_mutex);
+
 }
 
-// 列出远程节点参数
-int VulcanNode::list_params(int remote_node_id) {
-    if (!_dispatcher.isNodeOnline(remote_node_id)) {
-        PX4_ERR("Remote node %d is offline", remote_node_id);
-        return -ENODEV;
-    }
-
-    // 请求远程节点的参数列表
-    uavcan::protocol::param::GetSet::Request req;
-    req.name = "list"; // 假设参数名称为 "list" 表示请求参数列表
-    uavcan::protocol::param::GetSet::Response resp;
-    int res = _dispatcher.getParam(remote_node_id, req, resp);
-    if (res < 0) {
-        PX4_ERR("Failed to list parameters for node %d: %d", remote_node_id, res);
-        return res;
-    }
-
-    // 解析并打印参数
-    PX4_INFO("Parameters for node %d:", remote_node_id);
-    for (const auto& param : resp.params) {
-        PX4_INFO("  %s = %s", param.name.c_str(), param.value.toString().c_str());
-    }
-
-    return 0;
+// // 列出远程节点参数
+void
+VulcanNode::update_params()
+{
+// #if defined(CONFIG_UAVCAN_OUTPUTS_CONTROLLER)
+// 	_mixing_interface_esc.updateParams();
+// 	_mixing_interface_servo.updateParams();
+// #endif
 }
 
-// 保存远程节点参数
-int VulcanNode::save_params(int remote_node_id) {
-    // 发送保存命令（假设参数名称为 "save_all"）
-    uavcan::protocol::param::GetSet::Request req;
-    req.name = "save_all";
-    uavcan::protocol::param::GetSet::Response resp;
-    int res = _dispatcher.getParam(remote_node_id, req, resp);
-    if (res < 0) {
-        PX4_ERR("Failed to save parameters for node %d: %d", remote_node_id, res);
-        return res;
-    }
 
-    PX4_INFO("Parameters for node %d saved", remote_node_id);
-    return 0;
+void
+VulcanNode::busevent_signal_trampoline()
+{
+	if (_instance) {
+		// trigger the work queue (Note, this is called from IRQ context)
+		_instance->ScheduleNow();
+	}
 }
 
-// 设置远程节点参数
-int VulcanNode::set_param(int remote_node_id, const char* name, char* value) {
-    if (!name || !value) {
-        PX4_ERR("Invalid parameter name or value");
-        return -EINVAL;
-    }
 
-    // 构造参数请求
-    uavcan::protocol::param::GetSet::Request req;
-    req.name = name;
-    req.value.fromString(value); // 假设支持字符串赋值
-
-    uavcan::protocol::param::GetSet::Response resp;
-    int res = _dispatcher.getParam(remote_node_id, req, resp);
-    if (res < 0) {
-        PX4_ERR("Failed to set parameter %s on node %d: %d", name, remote_node_id, res);
-        return res;
-    }
-
-    PX4_INFO("Parameter %s set to %s", name, value);
-    return 0;
+static void print_usage()
+{
+	PX4_INFO("usage: \n"
+		 "\tuavcan {start|status|stop|shrink|update}\n"
+		 "\t        param [set|get|list|save] <node-id> <name> <value>|reset <node-id>");
 }
 
-// 获取远程节点参数
-int VulcanNode::get_param(int remote_node_id, const char* name) {
-    if (!name) {
-        PX4_ERR("Invalid parameter name");
-        return -EINVAL;
-    }
 
-    // 构造参数请求
-    uavcan::protocol::param::GetSet::Request req;
-    req.name = name;
-    uavcan::protocol::param::GetSet::Response resp;
-    int res = _dispatcher.getParam(remote_node_id, req, resp);
-    if (res < 0) {
-        PX4_ERR("Failed to get parameter %s on node %d: %d", name, remote_node_id, res);
-        return res;
-    }
+extern "C" __EXPORT int vulcan_main(int argc, char *argv[])
+{
+	if (argc < 2) {
+		print_usage();
+		::exit(1);
+	}
 
-    PX4_INFO("Parameter %s = %s", name, resp.value.toString().c_str());
-    return 0;
-}
+	if (!std::strcmp(argv[1], "start")) {
+		if (VulcanNode::instance()) {
+			// Already running, no error
+			PX4_INFO("already started");
+			::exit(0);
+		}
 
-// 重置远程节点
-int VulcanNode::reset_node(int remote_node_id) {
-    // 使用 UAVCAN 协议发送重置命令（假设存在 Reset 服务）
-    uavcan::protocol::Restart::Request req;
-    uavcan::protocol::Restart::Response resp;
-    int res = _dispatcher.callService(remote_node_id, req, resp);
-    if (res < 0) {
-        PX4_ERR("Failed to reset node %d: %d", remote_node_id, res);
-        return res;
-    }
+		// Node ID
+		// int32_t node_id = 1;
+		// (void)param_get(param_find("UAVCAN_NODE_ID"), &node_id);
 
-    PX4_INFO("Node %d reset successfully", remote_node_id);
-    return 0;
-}
+		// if (node_id < 0 || node_id > uavcan::NodeID::Max || !uavcan::NodeID(node_id).isUnicast()) {
+		// 	PX4_ERR("Invalid Node ID %" PRId32, node_id);
+		// 	::exit(1);
+		// }
 
-// 参数更新回调处理
-void VulcanNode::set_param_handler(uavcan::protocol::param::GetSet::Request& req,
-                                  uavcan::protocol::param::GetSet::Response& resp) {
-    if (req.name == "example_param") {
-        // 更新本地参数
-        if (req.value.isInteger()) {
-            int32_t val = req.value.toInteger();
-            PX4_INFO("Received param update: %s = %d", req.name.c_str(), val);
-            // 应用新值到模块参数
-            // 示例：param_set_int(..., val);
-        } else {
-            PX4_WARN("Invalid parameter type for %s", req.name.c_str());
-        }
-    } else {
-        PX4_WARN("Unknown parameter: %s", req.name.c_str());
-    }
+		// CAN bitrate
+		int32_t bitrate = 1000000;
+		(void)param_get(param_find("UAVCAN_BITRATE"), &bitrate);
+
+		// Start
+		PX4_INFO("Vulcan start bitrate %" PRIu32,bitrate);
+		return VulcanNode::start(bitrate);
+	}
+
+	/* commands below require the app to be started */
+	VulcanNode *const inst = VulcanNode::instance();
+
+	if (!inst) {
+		errx(1, "application not running");
+	}
+
+	// if (!std::strcmp(argv[1], "update")) {
+	// 	if (UavcanNode::instance() == nullptr) {
+	// 		errx(1, "firmware server is not running");
+	// 	}
+
+	// 	UavcanNode::instance()->requestCheckAllNodesFirmwareAndUpdate();
+	// 	::exit(0);
+	// }
+
+	if (!std::strcmp(argv[1], "status") || !std::strcmp(argv[1], "info")) {
+		inst->print_info();
+		::exit(0);
+	}
+
+	// if (!std::strcmp(argv[1], "shrink")) {
+	// 	inst->shrink();
+	// 	::exit(0);
+	// }
+
+	/*
+	 * Parameter setting commands
+	 *
+	 *  uavcan param list <node>
+	 *  uavcan param save <node>
+	 *  uavcan param get <node> <name>
+	 *  uavcan param set <node> <name> <value>
+	 *
+	 */
+	// int node_arg = !std::strcmp(argv[1], "reset") ? 2 : 3;
+
+	// if (!std::strcmp(argv[1], "param") || node_arg == 2) {
+	// 	if (argc < node_arg + 1) {
+	// 		errx(1, "Node id required");
+	// 	}
+
+	// 	int nodeid = atoi(argv[node_arg]);
+
+	// 	if (nodeid  == 0 || nodeid  > 127 || nodeid  == inst->get_node().getNodeID().get()) {
+	// 		errx(1, "Invalid Node id");
+	// 	}
+
+	// 	if (node_arg == 2) {
+
+	// 		return inst->reset_node(nodeid);
+
+	// 	} else if (!std::strcmp(argv[2], "list")) {
+
+	// 		return inst->list_params(nodeid);
+
+	// 	} else if (!std::strcmp(argv[2], "save")) {
+
+	// 		return inst->save_params(nodeid);
+
+	// 	} else if (!std::strcmp(argv[2], "get")) {
+	// 		if (argc < 5) {
+	// 			errx(1, "Name required");
+	// 		}
+
+	// 		return inst->get_param(nodeid, argv[4]);
+
+	// 	} else if (!std::strcmp(argv[2], "set")) {
+	// 		if (argc < 5) {
+	// 			errx(1, "Name required");
+	// 		}
+
+	// 		if (argc < 6) {
+	// 			errx(1, "Value required");
+	// 		}
+
+	// 		return inst->set_param(nodeid, argv[4], argv[5]);
+	// 	}
+	// }
+
+	if (!std::strcmp(argv[1], "stop")) {
+		delete inst;
+		::exit(0);
+	}
+
+	print_usage();
+	::exit(1);
 }

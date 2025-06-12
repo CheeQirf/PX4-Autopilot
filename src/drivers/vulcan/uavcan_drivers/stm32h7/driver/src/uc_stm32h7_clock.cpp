@@ -5,7 +5,7 @@
 #include <uavcan_stm32h7/clock.hpp>
 #include <uavcan_stm32h7/thread.hpp>
 #include "internal.hpp"
-#include
+
 #if UAVCAN_STM32H7_TIMER_NUMBER
 
 #include <cassert>
