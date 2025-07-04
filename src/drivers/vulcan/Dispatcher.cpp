@@ -50,7 +50,12 @@ Dispatcher::spinOnce()
 }
 
 
+int
+Dispatcher::send(const CanFrame& frame, MonotonicTime tx_deadline, MonotonicTime blocking_deadline, CanTxQueue::Qos qos,
+             CanIOFlags flags, uint8_t iface_mask){
+        return canio_.send(frame, tx_deadline, blocking_deadline, iface_mask, qos, flags);
 
+             }
 
 
 };

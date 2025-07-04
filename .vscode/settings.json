@@ -129,5 +129,15 @@
                 "${workspaceFolder}/validation/module_schema.yaml": "${workspaceFolder}/src/modules/*/module.yaml"
         },
         "ros.distro": "humble",
+        "python.autoComplete.extraPaths": [
+                "/home/chee/fly_ws/devel/lib/python3/dist-packages",
+                "/home/chee/catkin_ws2/devel/lib/python3/dist-packages",
+                "/opt/ros/noetic/lib/python3/dist-packages"
+        ],
+        "python.analysis.extraPaths": [
+                "/home/chee/fly_ws/devel/lib/python3/dist-packages",
+                "/home/chee/catkin_ws2/devel/lib/python3/dist-packages",
+                "/opt/ros/noetic/lib/python3/dist-packages"
+        ],
 
 }

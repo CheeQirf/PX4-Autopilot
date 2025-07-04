@@ -4,8 +4,7 @@
 #include <uavcan/transport/can_io.hpp>
 #include <uavcan/util/linked_list.hpp>
 #include <uavcan/util/method_binder.hpp>
-// #include <uavcan/transport/perf_counter.hpp>
-
+#include <uavcan/driver/can.hpp>
 namespace uavcan {
 
 // Forward declare Dispatcher
@@ -17,7 +16,7 @@ public:
     virtual void handleMessage(const CanRxFrame& frame) = 0;
 };
 
-template<typename _CatchFn = bool(*)(const CanRxFrame&), typename _CallbackFn = void(*)(const CanRxFrame&)>
+template<typename _CallbackFn = void(*)(const CanRxFrame&),typename _CatchFn = bool(*)(const CanRxFrame&)>
 class Subscriber : public BaseSubscriber {
 public:
     typedef _CatchFn _Catch;
@@ -26,10 +25,12 @@ public:
     // The constructor parameters `catchFn` and `callback` no longer shadow the member variables.
     Subscriber(_Catch catchFn, _Callback callback) : catchFn_(catchFn), callbackFn_(callback) {}
 
+
     int start(Dispatcher* instance);
 
     void handleMessage(const CanRxFrame& frame) override {
         // Use the member variables with the underscore suffix
+        if(catchFn_==nullptr || !callbackFn_)return;
         if (catchFn_(frame)) {
             callbackFn_(frame);
         }
@@ -70,7 +71,8 @@ public:
         _root.insert(suber);
         return 0;
     };
-
+    int send(const CanFrame& frame, MonotonicTime tx_deadline, MonotonicTime blocking_deadline, CanTxQueue::Qos qos,
+             CanIOFlags flags, uint8_t iface_mask);
 
 
 

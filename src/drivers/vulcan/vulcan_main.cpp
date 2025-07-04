@@ -1,5 +1,7 @@
 #include "vulcan_main.hpp"
 // 静态成员变量定义
+
+using namespace uavcan;
 VulcanNode* VulcanNode::_instance = nullptr;
 static VulcanNode::CanInitHelper * can = nullptr;
 // 构造函数
@@ -250,7 +252,14 @@ VulcanNode::busevent_signal_trampoline()
 		_instance->ScheduleNow();
 	}
 }
+int
+VulcanNode::send(const CanFrame& frame, MonotonicTime tx_deadline, MonotonicTime blocking_deadline, CanTxQueue::Qos qos,
+             CanIOFlags flags, uint8_t iface_mask)
+{
+    return _node.send(frame, tx_deadline, blocking_deadline, qos,
+             flags, iface_mask);
 
+}
 
 static void print_usage()
 {

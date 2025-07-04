@@ -1,3 +1,5 @@
+#pragma once
+
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/atomic.h>
 #include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
@@ -11,7 +13,8 @@
 
 
 #include "Dispatcher.hpp"
-
+#include <uavcan/driver/can.hpp>
+#include <uavcan/time.hpp>
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionInterval.hpp>
@@ -31,6 +34,8 @@ class VulcanNode: public px4::ScheduledWorkItem, public ModuleParams{
 	static constexpr unsigned RxQueueLenPerIface	= FramePerMSecond * ScheduleIntervalMs; // At
 
 
+
+
 public:
 	typedef UAVCAN_DRIVER::CanInitHelper<RxQueueLenPerIface> CanInitHelper;
 	VulcanNode(uavcan::ICanDriver &can_driver, uavcan::ISystemClock &system_clock);
@@ -40,7 +45,8 @@ public:
 	void		print_info();
 	static void busevent_signal_trampoline();
 	static VulcanNode	*instance() { return _instance; }
-
+	int send(const uavcan::CanFrame& frame, uavcan::MonotonicTime tx_deadline, uavcan::MonotonicTime blocking_deadline, uavcan::CanTxQueue::Qos qos,
+             uavcan::CanIOFlags flags, uint8_t iface_mask);
 
 
 

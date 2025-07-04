@@ -145,7 +145,8 @@ px4_add_module(
 	SRCS
 		# arming_status.cpp
 		# arming_status.hpp
-
+		Actuator/Motors.cpp
+		Actuator/Motors.hpp
 		# safety_state.cpp
 		# safety_state.hpp
 		Dispatcher.cpp
