@@ -7,6 +7,9 @@
 #include <uavcan/debug.hpp>
 #include <cassert>
 
+
+
+
 namespace uavcan
 {
 /*

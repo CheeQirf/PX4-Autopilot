@@ -31,26 +31,48 @@
  *
  ****************************************************************************/
 
-#include <px4_arch/spi_hw_description.h>
-#include <drivers/drv_sensor.h>
-#include <nuttx/spi/spi.h>
+/**
+ * @file usb.c
+ *
+ * Board-specific USB functions.
+ */
 
+#include "board_config.h"
+#include <nuttx/usb/usbdev.h>
+#include <nuttx/usb/usbdev_trace.h>
+#include <stm32_otg.h>
+#include <debug.h>
 
-constexpr px4_spi_bus_t px4_spi_buses[SPI_BUS_MAX_BUS_ITEMS] = {
-	initSPIBus(SPI::Bus::SPI1, {
-		//initSPIDevice(DRV_GYR_DEVTYPE_BMI088, SPI::CS{GPIO::PortA, GPIO::Pin3}, SPI::DRDY{GPIO::PortA, GPIO::Pin1}),
-		//initSPIDevice(DRV_ACC_DEVTYPE_BMI088, SPI::CS{GPIO::PortA, GPIO::Pin2}, SPI::DRDY{GPIO::PortA, GPIO::Pin0}),
-	}),
-	initSPIBus(SPI::Bus::SPI2, {
-		// initSPIDevice(SPIDEV_FLASH(0), SPI::CS{GPIO::PortB, GPIO::Pin12})
-	}),
-	initSPIBus(SPI::Bus::SPI3, {
-		// not in use, future development
-	}),
-	initSPIBus(SPI::Bus::SPI4, {
-		//initSPIDevice(DRV_GYR_DEVTYPE_BMI088, SPI::CS{GPIO::PortC, GPIO::Pin2}, SPI::DRDY{GPIO::PortE, GPIO::Pin3}),
-	//	initSPIDevice(DRV_ACC_DEVTYPE_BMI088, SPI::CS{GPIO::PortC, GPIO::Pin13}, SPI::DRDY{GPIO::PortE, GPIO::Pin4}),
-	}),
-};
+/************************************************************************************
+ * Name: stm32_usbinitialize
+ *
+ * Description:
+ *   Called to setup USB-related GPIO pins for the board.
+ *
+ ************************************************************************************/
 
-static constexpr bool unused = validateSPIConfig(px4_spi_buses);
+__EXPORT void stm32_usbinitialize(void)
+{
+	/* The OTG FS has an internal soft pull-up */
+
+	/* Configure the OTG FS VBUS sensing GPIO, Power On, and Overcurrent GPIOs */
+
+#ifdef CONFIG_STM32H7_OTGFS
+	stm32_configgpio(GPIO_OTGFS_VBUS);
+#endif
+}
+
+/************************************************************************************
+ * Name:  stm32_usbsuspend
+ *
+ * Description:
+ *   Board logic must provide the stm32_usbsuspend logic if the USBDEV driver is
+ *   used.  This function is called whenever the USB enters or leaves suspend mode.
+ *   This is an opportunity for the board logic to shutdown clocks, power, etc.
+ *   while the USB is suspended.
+ *
+ ************************************************************************************/
+__EXPORT void stm32_usbsuspend(FAR struct usbdev_s *dev, bool resume)
+{
+	uinfo("resume: %d\n", resume);
+}

@@ -346,3 +346,8 @@ CONFIG:
       buildType: MinSizeRel
       settings:
         CONFIG: raspberrypi_pico_default
+    yuchord_boringh7_default:
+      short: yuchord_boringh7
+      buildType: MinSizeRel
+      settings:
+        CONFIG: yuchord_boringh7_default

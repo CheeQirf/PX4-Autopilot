@@ -10,6 +10,7 @@
 #include <lib/perf/perf_counter.h>
 
 
+#include "Actuator/Motors.hpp"
 
 
 #include "Dispatcher.hpp"
@@ -57,11 +58,11 @@ private:
 	void 		update_params();
 
 
+	uavcan_node::Allocator _pool_allocator;
 
 
 	static VulcanNode	*_instance;			///< singleton pointer
 	uavcan::Dispatcher    _node;
-	uavcan_node::Allocator _pool_allocator;
 	bool                    _node_init{false};
 	perf_counter_t			_cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 	perf_counter_t			_interval_perf{perf_alloc(PC_INTERVAL, MODULE_NAME": cycle interval")};
@@ -78,5 +79,11 @@ private:
 
 
 	px4::atomic_bool	_task_should_exit{false};	///< flag to indicate to tear down the CAN driver
+
+
+
+
+	//mixer
+	VulcanMixingInterfaceTest _test_motor;
 
 };

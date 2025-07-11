@@ -313,7 +313,7 @@ MavlinkParametersManager::send()
 		param_find("SENS_DPRES_OFF");
 		param_find("TRIG_MODE");
 		param_find("UAVCAN_ENABLE");
-
+		param_find("VULCAN_ENABLE");
 		_first_send = true;
 	}
 

@@ -294,7 +294,22 @@
                 "clear": false
             },
             "problemMatcher": []
-        }
+        },
+        {
+            "label": "Build and Download",
+            "type": "shell",
+            "command":"openocd",
+            "args": [
+            "-f",
+            "interface/stlink.cfg",
+            "-f",
+            "target/stm32h750Crack.cfg",
+            "-c",
+            "program ./build/yuchord_boringh7_default/yuchord_boringh7_default.bin 0x8008000  verify reset exit "
+            ],
+            "problemMatcher": []
+        },
+
     ],
     "inputs": [
         {

@@ -1,10 +1,10 @@
 {
-    "board_id": 1013,
+    "board_id": 1200,
     "magic": "PX4FWv1",
-    "description": "Firmware for the boringH7 board",
+    "description": "Firmware for the AP-H743v2 board",
     "image": "",
     "build_time": 0,
-    "summary": "MatekH743-mini",
+    "summary": "AP-H743v2",
     "version": "0.1",
     "image_size": 0,
     "image_maxsize": 1835008,

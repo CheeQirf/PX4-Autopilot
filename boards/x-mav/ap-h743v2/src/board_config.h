@@ -53,27 +53,18 @@
  * Definitions
  ****************************************************************************************************/
 
-// #define FLASH_BASED_PARAMS
+#define FLASH_BASED_PARAMS
 
 
 /* LEDs are driven with push open drain to support Anode to 5V or 3.3V */
 
-#  define GPIO_nLED_RED         /* PD15 */  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN0)
-#  define GPIO_nLED_GREEN       /* PD11 */  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN1)
-#  define GPIO_nLED_BLUE        /* PB15 */  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN2)
+#  define GPIO_nLED_RED         /* PD15 */  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN15)
+#  define GPIO_nLED_GREEN       /* PD11 */  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11)
+#  define GPIO_nLED_BLUE        /* PB15 */  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN15)
 
 #  define BOARD_HAS_CONTROL_STATUS_LEDS      1
 #  define BOARD_OVERLOAD_LED     LED_RED
 #  define BOARD_ARMED_STATE_LED  LED_BLUE
-
-/* I2C busses */
-/* Devices on the onboard buses.
- *
- * Note that these are unshifted addresses.
- */
-// #define PX4_I2C_OBDEV_SE050         0x48
-
-#define GPIO_SPL_ADDR_SET     /* PB5  */  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN5)
 
 /*
  * ADC channels
@@ -95,7 +86,7 @@
 /* Define GPIO pins used as ADC N.B. Channel numbers must match below  */
 /* Define Channel numbers must match above GPIO pin IN(n)*/
 #define ADC_BATTERY_VOLTAGE_CHANNEL             ADC12_CH(4)
-#define ADC_BATTERY_CURRENT_CHANNEL             ADC12_CH(5)
+#define ADC_BATTERY_CURRENT_CHANNEL             ADC12_CH(8)
 
 #define ADC_CHANNELS \
 	((1 << ADC_BATTERY_VOLTAGE_CHANNEL) | \
@@ -135,9 +126,9 @@
 
 /* USB OTG FS
  *
- * PD0  OTG_FS_VBUS VBUS sensing
+ * PE15  OTG_FS_VBUS VBUS sensing
  */
-#define GPIO_OTGFS_VBUS         /* PE4 */ (GPIO_INPUT|GPIO_PULLDOWN|GPIO_SPEED_100MHz|GPIO_PORTE|GPIO_PIN4)
+#define GPIO_OTGFS_VBUS         /* PE15 */ (GPIO_INPUT|GPIO_PULLDOWN|GPIO_SPEED_100MHz|GPIO_PORTE|GPIO_PIN15)
 #define BOARD_ADC_USB_CONNECTED (px4_arch_gpioread(GPIO_OTGFS_VBUS))
 
 /* High-resolution timer */
@@ -175,7 +166,6 @@
 		GPIO_CAN1_RX, \
 		PX4_ADC_GPIO, \
 		GPIO_TONE_ALARM_IDLE, \
-		GPIO_SPL_ADDR_SET, \
 		GPIO_PC0, \
 		GPIO_PC1, \
 	}

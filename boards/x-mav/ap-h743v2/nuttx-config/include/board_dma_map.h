@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2021 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,26 +31,32 @@
  *
  ****************************************************************************/
 
-#include <px4_arch/spi_hw_description.h>
-#include <drivers/drv_sensor.h>
-#include <nuttx/spi/spi.h>
+#pragma once
+// #define DMAMAP_SPI1_RX    DMAMAP_DMA12_SPI1RX_0 /* DMA1:37 */
+// #define DMAMAP_SPI1_TX    DMAMAP_DMA12_SPI1TX_0 /* DMA1:38 */
 
+#define DMAMAP_SPI2_RX    DMAMAP_DMA12_SPI2RX_0 /* DMA1:39 */
+#define DMAMAP_SPI2_TX    DMAMAP_DMA12_SPI2TX_0 /* DMA1:40 */
 
-constexpr px4_spi_bus_t px4_spi_buses[SPI_BUS_MAX_BUS_ITEMS] = {
-	initSPIBus(SPI::Bus::SPI1, {
-		//initSPIDevice(DRV_GYR_DEVTYPE_BMI088, SPI::CS{GPIO::PortA, GPIO::Pin3}, SPI::DRDY{GPIO::PortA, GPIO::Pin1}),
-		//initSPIDevice(DRV_ACC_DEVTYPE_BMI088, SPI::CS{GPIO::PortA, GPIO::Pin2}, SPI::DRDY{GPIO::PortA, GPIO::Pin0}),
-	}),
-	initSPIBus(SPI::Bus::SPI2, {
-		// initSPIDevice(SPIDEV_FLASH(0), SPI::CS{GPIO::PortB, GPIO::Pin12})
-	}),
-	initSPIBus(SPI::Bus::SPI3, {
-		// not in use, future development
-	}),
-	initSPIBus(SPI::Bus::SPI4, {
-		//initSPIDevice(DRV_GYR_DEVTYPE_BMI088, SPI::CS{GPIO::PortC, GPIO::Pin2}, SPI::DRDY{GPIO::PortE, GPIO::Pin3}),
-	//	initSPIDevice(DRV_ACC_DEVTYPE_BMI088, SPI::CS{GPIO::PortC, GPIO::Pin13}, SPI::DRDY{GPIO::PortE, GPIO::Pin4}),
-	}),
-};
+// DMAMUX2
+// #define DMAMAP_SPI3_RX    DMAMAP_DMA12_SPI3RX_0 /* DMA1:61 */
+// #define DMAMAP_SPI3_TX    DMAMAP_DMA12_SPI3TX_0 /* DMA1:62 */
 
-static constexpr bool unused = validateSPIConfig(px4_spi_buses);
+// #define DMAMAP_SPI6_RX    DMAMAP_BDMA_SPI6_RX /* BDMA:11 */
+// #define DMAMAP_SPI6_TX    DMAMAP_BDMA_SPI6_TX /* BDMA:12 */
+
+//TODO: UART DMA test
+// #define DMAMAP_USART1_RX   DMAMAP_DMA12_USART1RX_1  /*DMA2:41*/
+// #define DMAMAP_USART1_TX   DMAMAP_DMA12_USART1TX_1  /*DMA2:42*/
+
+// #define DMAMAP_USART2_RX   DMAMAP_DMA12_USART2RX_1 /* DMA2:43 */
+// #define DMAMAP_USART2_TX   DMAMAP_DMA12_USART2TX_1 /* DMA2:44 */
+
+// #define DMAMAP_USART3_RX   DMAMAP_DMA12_USART3RX_1 /* DMA2:45 */
+// #define DMAMAP_USART3_TX   DMAMAP_DMA12_USART3TX_1 /* DMA2:46 */
+
+#define DMAMAP_UART4_RX    DMAMAP_DMA12_UART4RX_1 /* DMA1:63 */
+#define DMAMAP_UART4_TX    DMAMAP_DMA12_UART4TX_1 /* DMA1:64 */
+
+// #define DMAMAP_UART5_RX    DMAMAP_DMA12_UART5RX_0 /* DMA1:65 */
+// #define DMAMAP_UART5_TX    DMAMAP_DMA12_UART5RX_0 /* DMA1:66 */

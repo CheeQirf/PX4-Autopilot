@@ -1,22 +1,23 @@
-module_name: UAVCAN
+module_name: VULCAN
 actuator_output:
-  show_subgroups_if: 'UAVCAN_ENABLE>=3'
+  show_subgroups_if: 'VULCAN_ENABLE>=3'
   config_parameters:
-    - param: 'UAVCAN_ENABLE'
+    - param: 'VULCAN_ENABLE'
       label: 'Configure'
       function: 'enable'
-    - param: 'UAVCAN_BITRATE'
+    - param: 'VULCAN_BITRATE'
       label: 'Bitrate'
   output_groups:
-    - param_prefix: UAVCAN_EC
-      group_label: 'ESCs'
-      channel_label: 'ESC'
+    - param_prefix: CAN_Test
+      group_label: 'Tests'
+      channel_label: 'Channel'
       standard_params:
+        disarmed: { min: 800, max: 2200, default: 1000 }
         min: { min: 0, max: 8191, default: 1 }
         max: { min: 0, max: 8191, default: 8191 }
         failsafe: { min: 0, max: 8191 }
       num_channels: 8
-    - param_prefix: UAVCAN_SV
+    - param_prefix: VULCAN_SV
       group_label: 'Servos'
       channel_label: 'Servo'
       standard_params:

@@ -92,16 +92,6 @@ then
 			fi
 		fi
 	fi
-if [ -b "/dev/mmcsd0" ]
-then
-	if mount -t vfat /dev/mmcsd0 /fs/microsd
-	then
-		if [ -f "/fs/microsd/.format" ]
-		then
-			echo "INFO [init] format /dev/mmcsd0 requested (/fs/microsd/.format)"
-			set SDCARD_FORMAT yes
-			rm /fs/microsd/.format
-			umount /fs/mic
 
 	# Check for an update of the ext_autostart folder, and replace the old one with it
 	if [ -e /fs/microsd/ext_autostart_new ]

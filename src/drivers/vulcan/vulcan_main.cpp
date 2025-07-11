@@ -9,13 +9,19 @@ VulcanNode::VulcanNode(uavcan::ICanDriver& can_driver, uavcan::ISystemClock& sys
     : px4::ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::uavcan),
       ModuleParams(nullptr),
       _node(can_driver, _pool_allocator, system_clock),
-      _node_init(false) {
+      _node_init(false) ,
+          _test_motor(this,_node_mutex)
+{
 	// int res = pthread_mutex_init()
-    	int res = pthread_mutex_init(&_node_mutex, nullptr);
-
+	PX4_INFO("Vulcan node instance init");
+    int res = pthread_mutex_init(&_node_mutex, nullptr);
+	int32_t uavcan_enable = 1;
+	(void)param_get(param_find("VULCAN_ENABLE"), &uavcan_enable);
 	if (res < 0) {
+		PX4_ERR("error create vulcan pthread mutex");
 		std::abort();
 	}
+	_test_motor.mixingOutput().setMaxTopicUpdateRate(1000000 / 400);
 
 }
 
@@ -55,13 +61,15 @@ int VulcanNode::start(uint32_t bitrate) {
         return -1;
     }
     if(can == nullptr){
+	PX4_INFO("ready to create can instance");
 	can = new CanInitHelper(board_get_can_interfaces());
+	PX4_INFO("Create can instance");
 		if (can == nullptr) {  // We don't have exceptions so bad_alloc cannot be thrown
 			PX4_ERR("Out of memory");
 			return -1;
 		}
     }
-    // 获取 CAN 驱动实例（假设已定义）
+
     _instance = new VulcanNode(can->driver,UAVCAN_DRIVER::SystemClock::instance());
 	if (_instance == nullptr) {
 		PX4_ERR("Out of memory");
@@ -70,23 +78,26 @@ int VulcanNode::start(uint32_t bitrate) {
     _instance->ScheduleOnInterval(ScheduleIntervalMs * 1000);
 
 
+
     return 0;
 }
 
 // 调度工作项的主函数
 void VulcanNode::Run() {
     if (!_node_init) {
+	PX4_INFO("vulcan node init in Run impl");
 	int32_t bitrate = 1000000;
-	(void)param_get(param_find("UAVCAN_BITRATE"), &bitrate);
+	(void)param_get(param_find("VULCAN_BITRATE"), &bitrate);
 	const int can_init_res = can->init(bitrate);
 
-		if (can_init_res < 0) {
-			PX4_ERR("CAN driver init failed %i", can_init_res);
+		if (can_init_res != 0) {
+			while(1){PX4_ERR("CAN driver init failed %i", can_init_res);}
 		}
 
 		_instance->init(can->driver.updateEvent());
 
 		_node_init = true;
+		    _instance->_test_motor.ScheduleNow();
 
     }
     	pthread_mutex_lock(&_node_mutex);
@@ -198,32 +209,7 @@ void VulcanNode::print_info() {
 
 	printf("\n");
 
-// #if defined(CONFIG_UAVCAN_OUTPUTS_CONTROLLER)
-// 	printf("ESC outputs:\n");
-// 	_mixing_interface_esc.mixingOutput().printStatus();
-
-// 	printf("Servo outputs:\n");
-// 	_mixing_interface_servo.mixingOutput().printStatus();
-// #endif
-
-// 	printf("\n");
-
-// 	// Sensor bridges
-// 	for (const auto &br : _sensor_bridges) {
-// 		printf("Sensor '%s':\n", br->get_name());
-// 		br->print_status();
-// 		printf("\n");
-// 	}
-
-// 	// Printing all nodes that are online
-// 	printf("Online nodes (Node ID, Health, Mode):\n");
-// 	_node_status_monitor.forEachNode([](uavcan::NodeID nid, uavcan::NodeStatusMonitor::NodeStatus ns) {
-// 		static constexpr const char *HEALTH[] = {"OK", "WARN", "ERR", "CRIT"};
-// 		static constexpr const char *MODES[] = {"OPERAT", "INIT", "MAINT", "SW_UPD", "?", "?", "?", "OFFLN"};
-// 		printf("\t% 3d %-10s %-10s\n", int(nid.get()), HEALTH[ns.health], MODES[ns.mode]);
-// 	});
-
-// 	printf("\n");
+	_test_motor._mixing_output.printStatus();
 
 	perf_print_counter(_cycle_perf);
 	perf_print_counter(_interval_perf);
@@ -237,10 +223,8 @@ void VulcanNode::print_info() {
 void
 VulcanNode::update_params()
 {
-// #if defined(CONFIG_UAVCAN_OUTPUTS_CONTROLLER)
-// 	_mixing_interface_esc.updateParams();
-// 	_mixing_interface_servo.updateParams();
-// #endif
+
+	_test_motor.updateParams();
 }
 
 
@@ -294,7 +278,7 @@ extern "C" __EXPORT int vulcan_main(int argc, char *argv[])
 
 		// CAN bitrate
 		int32_t bitrate = 1000000;
-		(void)param_get(param_find("UAVCAN_BITRATE"), &bitrate);
+		(void)param_get(param_find("VULCAN_BITRATE"), &bitrate);
 
 		// Start
 		PX4_INFO("Vulcan start bitrate %" PRIu32,bitrate);

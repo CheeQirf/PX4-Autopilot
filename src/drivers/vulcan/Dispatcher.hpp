@@ -1,3 +1,11 @@
+#pragma once
+#include <px4_platform_common/px4_config.h>
+#include <px4_platform_common/atomic.h>
+#include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
+#include <lib/drivers/device/Device.hpp>
+#include <lib/perf/perf_counter.h>
+
+
 #include <uavcan/error.hpp>
 #include <uavcan/std.hpp>
 #include <uavcan/build_config.hpp>
@@ -41,8 +49,12 @@ private:
     _Catch catchFn_;
     _Callback callbackFn_;
 };
-
 class UAVCAN_EXPORT Dispatcher : Noncopyable {
+
+    IPoolAllocator& pool_allocator_;
+
+
+
     CanIOManager canio_;
     ISystemClock& sysclock_;
     // TransferPerfCounter perf_;
@@ -63,7 +75,12 @@ class UAVCAN_EXPORT Dispatcher : Noncopyable {
 
 public:
     Dispatcher(ICanDriver& driver, IPoolAllocator& allocator, ISystemClock& sysclock)
-        : canio_(driver, allocator, sysclock), sysclock_(sysclock) {}
+        :pool_allocator_(allocator),
+        canio_(driver, pool_allocator_, sysclock), sysclock_(sysclock) {
+
+    PX4_INFO("CanIOManager: driver address: %p", static_cast<void*>(&driver));
+    PX4_INFO("CanIOManager: allocator address: %p", static_cast<void*>(&pool_allocator_));
+        }
 
     int spinOnce();
 
