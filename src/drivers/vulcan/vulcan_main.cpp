@@ -10,9 +10,11 @@ VulcanNode::VulcanNode(uavcan::ICanDriver& can_driver, uavcan::ISystemClock& sys
       ModuleParams(nullptr),
       _node(can_driver, _pool_allocator, system_clock),
       _node_init(false) ,
-          _test_motor(this,_node_mutex)
+          _test_motor(this,_node_mutex),
+	  _m3508_motor(this,_node_mutex)
 {
 	// int res = pthread_mutex_init()
+
 	PX4_INFO("Vulcan node instance init");
     int res = pthread_mutex_init(&_node_mutex, nullptr);
 	int32_t uavcan_enable = 1;
@@ -22,6 +24,7 @@ VulcanNode::VulcanNode(uavcan::ICanDriver& can_driver, uavcan::ISystemClock& sys
 		std::abort();
 	}
 	_test_motor.mixingOutput().setMaxTopicUpdateRate(1000000 / 400);
+	_m3508_motor.mixingOutput().setMaxTopicUpdateRate(1000000 / 400);
 
 }
 
@@ -98,6 +101,7 @@ void VulcanNode::Run() {
 
 		_node_init = true;
 		    _instance->_test_motor.ScheduleNow();
+		    _instance->_m3508_motor.ScheduleNow();
 
     }
     	pthread_mutex_lock(&_node_mutex);
@@ -210,7 +214,7 @@ void VulcanNode::print_info() {
 	printf("\n");
 
 	_test_motor._mixing_output.printStatus();
-
+	_m3508_motor._mixing_output.printStatus();
 	perf_print_counter(_cycle_perf);
 	perf_print_counter(_interval_perf);
 
@@ -225,6 +229,7 @@ VulcanNode::update_params()
 {
 
 	_test_motor.updateParams();
+	_m3508_motor.updateParams();
 }
 
 

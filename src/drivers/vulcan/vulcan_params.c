@@ -378,3 +378,59 @@ PARAM_DEFINE_INT32(VULCAN_SUB_RNG, 0);
  * @group VULCAN
  */
 PARAM_DEFINE_INT32(VULCAN_SUB_BTN, 0);
+
+
+/**
+ * M3508 motor enable
+ *
+ * @boolean
+ * @reboot_required true
+ * @group M3508
+ */
+PARAM_DEFINE_INT32(M3508_ENABLE, 1);
+
+/**
+ * M3508 motor speed controller proportional gain (Kp)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M3508_SPEED_KP, 0.05);
+
+/**
+ * M3508 motor speed controller integral gain (Ki)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M3508_SPEED_KI, 0.01);
+
+/**
+ * M3508 motor speed controller derivative gain (Kd)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M3508_SPEED_KD, 0.001);
+
+/**
+ * M3508 motor current controller proportional gain (Kp)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M3508_CURRENT_KP, 1.0);
+
+/**
+ * M3508 motor current controller integral gain (Ki)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M3508_CURRENT_KI, 0.1);
+
+/**
+ * M3508 motor current controller derivative gain (Kd)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M3508_CURRENT_KD, 0.005);
+
+
+
+

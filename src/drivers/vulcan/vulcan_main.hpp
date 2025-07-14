@@ -48,8 +48,7 @@ public:
 	static VulcanNode	*instance() { return _instance; }
 	int send(const uavcan::CanFrame& frame, uavcan::MonotonicTime tx_deadline, uavcan::MonotonicTime blocking_deadline, uavcan::CanTxQueue::Qos qos,
              uavcan::CanIOFlags flags, uint8_t iface_mask);
-
-
+	int add_subscriber(uavcan::BaseSubscriber* suber){return this->_node.add_subscriber(suber);}
 
 
 private:
@@ -85,5 +84,6 @@ private:
 
 	//mixer
 	VulcanMixingInterfaceTest _test_motor;
+	VulcanMixingInterfaceM3508 _m3508_motor;
 
 };

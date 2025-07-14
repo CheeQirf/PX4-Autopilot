@@ -154,7 +154,7 @@ px4_add_module(
 		# # Main
 		# uavcan_main.cpp
 		# uavcan_servers.cpp
-
+		# vulcan_params.c
 
 	MODULE_CONFIG
 		module.yaml
@@ -166,7 +166,7 @@ px4_add_module(
 		led
 		mixer_module
 		version
-
+		pid
 		# git_uavcan
 		uavcan_${UAVCAN_DRIVER}_driver
 

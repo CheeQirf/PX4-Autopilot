@@ -31,7 +31,12 @@ public:
     typedef _CallbackFn _Callback;
 
     // The constructor parameters `catchFn` and `callback` no longer shadow the member variables.
-    Subscriber(_Catch catchFn, _Callback callback) : catchFn_(catchFn), callbackFn_(callback) {}
+    Subscriber(_Catch catchFn, _Callback callback) : catchFn_(catchFn), callbackFn_(callback)
+    {
+
+
+
+    }
 
 
     int start(Dispatcher* instance);
