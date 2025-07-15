@@ -250,6 +250,8 @@ set(msg_files
 	WheelEncoders.msg
 	Wind.msg
 	YawEstimatorStatus.msg
+	Gim6010FeedBack.msg
+	Gim6010Command.msg
 )
 list(SORT msg_files)
 

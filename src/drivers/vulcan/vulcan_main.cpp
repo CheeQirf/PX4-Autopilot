@@ -12,6 +12,7 @@ VulcanNode::VulcanNode(uavcan::ICanDriver& can_driver, uavcan::ISystemClock& sys
       _node_init(false) ,
           _test_motor(this,_node_mutex),
 	  _m3508_motor(this,_node_mutex)
+
 {
 	// int res = pthread_mutex_init()
 
@@ -104,11 +105,12 @@ void VulcanNode::Run() {
 		    _instance->_m3508_motor.ScheduleNow();
 
     }
-    	pthread_mutex_lock(&_node_mutex);
 
 	perf_begin(_cycle_perf);
 	perf_count(_interval_perf);
+	pthread_mutex_lock(&_node_mutex);
 	_node.spinOnce();   // 执行调度器（处理 CAN 消息）
+    	pthread_mutex_unlock(&_node_mutex);
 
 	constexpr hrt_abstime status_pub_interval = 100_ms;
 
@@ -155,7 +157,6 @@ void VulcanNode::Run() {
 	}
 	perf_end(_cycle_perf);
 
-	pthread_mutex_unlock(&_node_mutex);
 
 
 	if (_task_should_exit.load()) {
@@ -192,7 +193,8 @@ void VulcanNode::print_info() {
 	// printf("\tTransfer errors:   %" PRIu64 "\n", _node.getTransferPerfCounter().getErrorCount());
 	// printf("\tRX transfers:      %" PRIu64 "\n", _node.getTransferPerfCounter().getRxTransferCount());
 	// printf("\tTX transfers:      %" PRIu64 "\n", _node.getTransferPerfCounter().getTxTransferCount());
-
+	// auto timer = UAVCAN_DRIVER::SystemClock::instance();
+	printf("Vulcan TimeBase MonoticTime: %lld ticks",UAVCAN_DRIVER::clock::getMonotonic().toUSec());
 	printf("\n");
 
 	// CAN driver status

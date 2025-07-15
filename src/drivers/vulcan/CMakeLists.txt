@@ -155,7 +155,6 @@ px4_add_module(
 		# uavcan_main.cpp
 		# uavcan_servers.cpp
 		# vulcan_params.c
-
 	MODULE_CONFIG
 		module.yaml
 	DEPENDS

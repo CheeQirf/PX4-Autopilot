@@ -401,14 +401,14 @@ PARAM_DEFINE_FLOAT(M3508_SPEED_KP, 0.05);
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_SPEED_KI, 0.01);
+PARAM_DEFINE_FLOAT(M3508_SPEED_KI, 0.00);
 
 /**
  * M3508 motor speed controller derivative gain (Kd)
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_SPEED_KD, 0.001);
+PARAM_DEFINE_FLOAT(M3508_SPEED_KD, 0.000);
 
 /**
  * M3508 motor current controller proportional gain (Kp)
@@ -422,14 +422,14 @@ PARAM_DEFINE_FLOAT(M3508_CURRENT_KP, 1.0);
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_CURRENT_KI, 0.1);
+PARAM_DEFINE_FLOAT(M3508_CURRENT_KI, 0.0);
 
 /**
  * M3508 motor current controller derivative gain (Kd)
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_CURRENT_KD, 0.005);
+PARAM_DEFINE_FLOAT(M3508_CURRENT_KD, 0.000);
 
 
 

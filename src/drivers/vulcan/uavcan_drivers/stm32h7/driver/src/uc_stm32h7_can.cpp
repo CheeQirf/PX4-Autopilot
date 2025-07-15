@@ -507,7 +507,6 @@ uavcan::int16_t CanIface::receive(uavcan::CanFrame &out_frame, uavcan::Monotonic
 	out_ts_utc = uavcan::UtcTime::fromUSec(utc_usec);
 	return 1;
 }
-
 uavcan::int16_t CanIface::configureFilters(const uavcan::CanFilterConfig *filter_configs,
 		uavcan::uint16_t num_configs)
 {

@@ -39,11 +39,11 @@ public:
     }
 
 
-    int start(Dispatcher* instance);
+   int start(Dispatcher* instance);
 
     void handleMessage(const CanRxFrame& frame) override {
         // Use the member variables with the underscore suffix
-        if(catchFn_==nullptr || !callbackFn_)return;
+        if(catchFn_==nullptr )return;
         if (catchFn_(frame)) {
             callbackFn_(frame);
         }
