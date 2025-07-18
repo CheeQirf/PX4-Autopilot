@@ -110,24 +110,24 @@ void VulcanMixingInterfaceM3508::data_sub_cb(const uavcan::CanRxFrame& msg)
 		if (motor_index != -1) {
 
 		//int16_t mechanical_angle = static_cast<int16_t>(msg.data[0] | (msg.data[1] << 8));
-		float speed_rpm_raw        = static_cast<int16_t>(msg.data[2] | (msg.data[3] << 8));
-		float actual_current_raw   = static_cast<int16_t>(msg.data[4] | (msg.data[5] << 8));
+		int16_t speed_rpm_raw        = static_cast<int16_t>(msg.data[2] <<8 | (msg.data[3]));
+		int16_t actual_current_raw   = static_cast<int16_t>(msg.data[4] <<8 | (msg.data[5]));
 		//int16_t temperature_c    = static_cast<int16_t>(msg.data[6] | (msg.data[7] << 8));
 
-		//pthread_mutex_lock(&_node_mutex);
+
 		_current_speed_rpm[motor_index] = (float)speed_rpm_raw;
 		_actual_current_ma[motor_index] = (float)actual_current_raw;
-		//pthread_mutex_unlock(&_node_mutex);
-		// printf(" Angle: %d \n", mechanical_angle);
-		printf(" Speed: %f RPM\n", (double)speed_rpm_raw);
-		printf(" Current: %f mA\n", (double)actual_current_raw);
-		// printf(" Temp: %d C\n", temperature_c);
+
 		}
 	}
 }
+
+
 bool VulcanMixingInterfaceM3508::updateOutputs(bool stop_motors, uint16_t outputs[MAX_ACTUATORS],
 			   unsigned num_outputs, unsigned num_control_groups_updated)
 {
+	printf("R:%f\n",(double)_current_speed_rpm[1]);
+	printf("A:%f,\n",(double)_actual_current_ma[1]);
 	if(_m3508_enable == 0) {
         	return true;
    	}
@@ -148,14 +148,15 @@ bool VulcanMixingInterfaceM3508::updateOutputs(bool stop_motors, uint16_t output
 	uavcan::CanFrame send_frame;
 	send_frame.id = 0x200;
 	send_frame.dlc = 8;
-	//具体最大转速需要调整
-	const float M3508_MAX_TARGET_RPM = 469.0f;
+	//3N·m下最大转速
+	// const float M3508_MAX_TARGET_RPM = 4000.0f;
 
 	for (unsigned i = 0; i < NUM_M3508_MOTORS_PER_FRAME; ++i) {
 		float target_speed_rpm = 0.0f;
 		if (i < num_outputs) {
-			float scaled_px4_output = static_cast<float>(outputs[i]) / PX4_OUTPUT_MAX_VAL;
-            		target_speed_rpm = (scaled_px4_output * 2.0f - 1.0f) * M3508_MAX_TARGET_RPM;
+			float scaled_px4_output = static_cast<float>(outputs[i]);
+            		target_speed_rpm = (scaled_px4_output - 4096.0f);
+
 		}
 		float acutual_speed_rpm = _current_speed_rpm[i];
 		float acutual_current_ma = _actual_current_ma[i];
@@ -171,6 +172,8 @@ bool VulcanMixingInterfaceM3508::updateOutputs(bool stop_motors, uint16_t output
 				0.0f,
 				dt_s
 			);
+			// printf("RPM:%f\n",(double)target_current_from_speed_pid);
+			//target_current_from_speed_pid = 200;
 			//电流 PID (内环)
 			float final_current_command_float = pid_calculate(
 				&_current_pid[i],
@@ -186,8 +189,8 @@ bool VulcanMixingInterfaceM3508::updateOutputs(bool stop_motors, uint16_t output
 		}else if(final_current_command <M3508_MIN_CURRENT){
 			final_current_command = M3508_MIN_CURRENT;
 		}
-		 send_frame.data[i * 2]     = static_cast<uint8_t>(final_current_command & 0xFF);
-		 send_frame.data[i * 2 + 1] = static_cast<uint8_t>((final_current_command >> 8) & 0xFF);
+		 send_frame.data[i * 2]     = static_cast<uint8_t>((final_current_command >> 8) & 0xFF);
+		 send_frame.data[i * 2 + 1] = static_cast<uint8_t>(final_current_command  & 0xFF);
 	}
 
     _node->send(send_frame,
@@ -203,7 +206,7 @@ bool VulcanMixingInterfaceM3508::updateOutputs(bool stop_motors, uint16_t output
 void VulcanMixingInterfaceM3508::init_pid_controllers() {
     for (unsigned i = 0; i < NUM_M3508_MOTORS_PER_FRAME; ++i) {
         pid_init(&_speed_pid[i], PID_MODE_DERIVATIV_CALC, 0.000001f);
-        float speed_integral_limit = 1000.0f;
+        float speed_integral_limit = (float)M3508_MAX_CURRENT;
         float speed_output_limit = (float)M3508_MAX_CURRENT;
         pid_set_parameters(&_speed_pid[i], _speed_kp, _speed_ki, _speed_kd, speed_integral_limit, speed_output_limit);
 
@@ -232,6 +235,10 @@ void VulcanMixingInterfaceM3508::updateParams() {
 
 }
 
+void VulcanMixingInterfaceM3508::print_info()
+{
+	printf("MA:%f\n",(double)_actual_current_ma[1]);
+}
 
 
 
@@ -241,13 +248,13 @@ bool vulcan_interface_gim6010_catchfn(const uavcan::CanRxFrame& msg){
 		uint16_t node_id = (msg.id>>5)& 0x3F;
 		uint8_t cmd_id = msg.id & 0x1F;
 		if(node_id<=3)
-			return (cmd_id ==0x009 || cmd_id==0x01C);
+			return (cmd_id ==0x009 || cmd_id==0x01C ||cmd_id ==0x00A);
 	}
 	return false;
 }
 VulcanMixingInterfaceGIM6010::VulcanMixingInterfaceGIM6010(VulcanNode* node,pthread_mutex_t &node_mutex)
 	:px4::ScheduledWorkItem(MODULE_NAME "-actuators-gim6010",px4::wq_configurations::uavcan),
-	ModuleParams(node),
+	ModuleParams(nullptr),
 	_node(node),
       _node_mutex(node_mutex),
       _suber(vulcan_interface_gim6010_catchfn,CbBinder(this,&VulcanMixingInterfaceGIM6010::data_sub_cb))
@@ -255,17 +262,26 @@ VulcanMixingInterfaceGIM6010::VulcanMixingInterfaceGIM6010(VulcanNode* node,pthr
 	this->_node->add_subscriber(&_suber);
 	for (unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i) {
 		_node_ids[i] = i;
-		//_current_input_mode[i] = 0;
     	}
+	// ScheduleOnInterval(100_ms);
+
 	memset(&_feedback,0,sizeof(_feedback));
-	for(unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i){
-		send_axis_state(i, 8);
-		send_control_mode(i, 3);//位置控制，位置滤波模式
-	}
+
 }
 void VulcanMixingInterfaceGIM6010::Run()
 {
 	pthread_mutex_lock(&_node_mutex);
+	if(first_in_flag){
+
+		first_in_flag = 0;
+		for(unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i){
+			send_axis_state(i, 8);
+			send_control_mode(i, 3);//位置控制，位置滤波模式
+		}
+	}
+
+
+
 	//订阅和发布消息
 	gim6010_command_s cmd;
 	if(_command_sub.update(&cmd)){
@@ -296,6 +312,12 @@ void VulcanMixingInterfaceGIM6010::data_sub_cb(const uavcan::CanRxFrame& msg)
 			float torque;
 			memcpy(&torque, &msg.data[4], sizeof(float));
 			_feedback.torque[node_id] = torque;
+		}else if (cmd_id==0x00A){
+			int32_t encoder_muti,encoder_single;
+			memcpy(&encoder_muti,&msg.data[0],sizeof(int32_t));
+			memcpy(&encoder_single,&msg.data[4],sizeof(int32_t));
+			_feedback.encoder_muti[node_id] = encoder_muti;
+			_feedback.encoder_single[node_id] = encoder_single;
 		}
 	}
 
@@ -348,3 +370,4 @@ void VulcanMixingInterfaceGIM6010::send_setpoint(uint8_t motor_idx, float positi
 	0,
 	1);
 }
+

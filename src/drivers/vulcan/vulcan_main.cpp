@@ -11,10 +11,11 @@ VulcanNode::VulcanNode(uavcan::ICanDriver& can_driver, uavcan::ISystemClock& sys
       _node(can_driver, _pool_allocator, system_clock),
       _node_init(false) ,
           _test_motor(this,_node_mutex),
-	  _m3508_motor(this,_node_mutex)
+	  _m3508_motor(this,_node_mutex),
+	  _gim6010_motor(this,_node_mutex)
 
 {
-	// int res = pthread_mutex_init()
+
 
 	PX4_INFO("Vulcan node instance init");
     int res = pthread_mutex_init(&_node_mutex, nullptr);
@@ -26,7 +27,7 @@ VulcanNode::VulcanNode(uavcan::ICanDriver& can_driver, uavcan::ISystemClock& sys
 	}
 	_test_motor.mixingOutput().setMaxTopicUpdateRate(1000000 / 400);
 	_m3508_motor.mixingOutput().setMaxTopicUpdateRate(1000000 / 400);
-
+	_gim6010_motor.ScheduleOnInterval(100_ms);
 }
 
 // 析构函数
@@ -103,7 +104,7 @@ void VulcanNode::Run() {
 		_node_init = true;
 		    _instance->_test_motor.ScheduleNow();
 		    _instance->_m3508_motor.ScheduleNow();
-
+		//     _instance->_gim6010_motor.ScheduleNow();
     }
 
 	perf_begin(_cycle_perf);
@@ -221,6 +222,11 @@ void VulcanNode::print_info() {
 	perf_print_counter(_interval_perf);
 
 
+
+	_m3508_motor.print_info();
+
+
+
     (void)pthread_mutex_unlock(&_node_mutex);
 
 }
@@ -262,6 +268,7 @@ static void print_usage()
 
 extern "C" __EXPORT int vulcan_main(int argc, char *argv[])
 {
+	//VulcanNode *const inst = VulcanNode::instance();
 	if (argc < 2) {
 		print_usage();
 		::exit(1);
@@ -273,15 +280,6 @@ extern "C" __EXPORT int vulcan_main(int argc, char *argv[])
 			PX4_INFO("already started");
 			::exit(0);
 		}
-
-		// Node ID
-		// int32_t node_id = 1;
-		// (void)param_get(param_find("UAVCAN_NODE_ID"), &node_id);
-
-		// if (node_id < 0 || node_id > uavcan::NodeID::Max || !uavcan::NodeID(node_id).isUnicast()) {
-		// 	PX4_ERR("Invalid Node ID %" PRId32, node_id);
-		// 	::exit(1);
-		// }
 
 		// CAN bitrate
 		int32_t bitrate = 1000000;
@@ -320,7 +318,7 @@ extern "C" __EXPORT int vulcan_main(int argc, char *argv[])
 
 	/*
 	 * Parameter setting commands
-	 *
+ *
 	 *  uavcan param list <node>
 	 *  uavcan param save <node>
 	 *  uavcan param get <node> <name>
@@ -329,48 +327,10 @@ extern "C" __EXPORT int vulcan_main(int argc, char *argv[])
 	 */
 	// int node_arg = !std::strcmp(argv[1], "reset") ? 2 : 3;
 
-	// if (!std::strcmp(argv[1], "param") || node_arg == 2) {
-	// 	if (argc < node_arg + 1) {
-	// 		errx(1, "Node id required");
-	// 	}
-
-	// 	int nodeid = atoi(argv[node_arg]);
-
-	// 	if (nodeid  == 0 || nodeid  > 127 || nodeid  == inst->get_node().getNodeID().get()) {
-	// 		errx(1, "Invalid Node id");
-	// 	}
-
-	// 	if (node_arg == 2) {
-
-	// 		return inst->reset_node(nodeid);
-
-	// 	} else if (!std::strcmp(argv[2], "list")) {
-
-	// 		return inst->list_params(nodeid);
-
-	// 	} else if (!std::strcmp(argv[2], "save")) {
-
-	// 		return inst->save_params(nodeid);
-
-	// 	} else if (!std::strcmp(argv[2], "get")) {
-	// 		if (argc < 5) {
-	// 			errx(1, "Name required");
-	// 		}
-
-	// 		return inst->get_param(nodeid, argv[4]);
-
-	// 	} else if (!std::strcmp(argv[2], "set")) {
-	// 		if (argc < 5) {
-	// 			errx(1, "Name required");
-	// 		}
-
-	// 		if (argc < 6) {
-	// 			errx(1, "Value required");
-	// 		}
-
-	// 		return inst->set_param(nodeid, argv[4], argv[5]);
-	// 	}
-	// }
+	if (!std::strcmp(argv[1],"gim6010")){
+		inst->publishGim6010Command(2.0f, 0.0f, 0.0f);
+		::exit(0);
+	}
 
 	if (!std::strcmp(argv[1], "stop")) {
 		delete inst;

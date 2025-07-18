@@ -15,9 +15,9 @@
 #include <uORB/topics/gim6010_feed_back.h>
 #include <uORB/topics/gim6010_command.h>
 //#include <uORB/SubscriptionInterval.hpp>
-const int16_t M3508_MAX_CURRENT = 10000;
-const int16_t M3508_MIN_CURRENT = -10000;
-const uint16_t PX4_OUTPUT_MAX_VAL = 10000;
+const int16_t M3508_MAX_CURRENT = 16384;
+const int16_t M3508_MIN_CURRENT = -16384;
+const uint16_t PX4_OUTPUT_MAX_VAL = 8191;
 const unsigned NUM_M3508_MOTORS_PER_FRAME = 4;
 const unsigned NUM_GIM6010_MOTORS_PER_FRAME = 4;
 class VulcanNode;
@@ -104,7 +104,7 @@ public:
 	// void mixerChanged() override;
 
 	MixingOutput &mixingOutput() { return _mixing_output; }
-
+        void print_info();
 
 	typedef uavcan::MethodBinder < VulcanMixingInterfaceM3508 *,
 		void (VulcanMixingInterfaceM3508::*)
@@ -126,6 +126,7 @@ class VulcanMixingInterfaceGIM6010 : public px4::ScheduledWorkItem, public Modul
 {
 
 private:
+	uint8_t first_in_flag = 1;
 	friend class VulcanNode;
 	VulcanNode* _node;
 	pthread_mutex_t &_node_mutex;

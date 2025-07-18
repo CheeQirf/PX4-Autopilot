@@ -21,7 +21,7 @@
 #include <uORB/SubscriptionInterval.hpp>
 #include <uORB/topics/can_interface_status.h>
 #include <uORB/topics/parameter_update.h>
-
+#include <uORB/topics/gim6010_command.h>
 
 
 class VulcanNode: public px4::ScheduledWorkItem, public ModuleParams{
@@ -49,6 +49,14 @@ public:
 	int send(const uavcan::CanFrame& frame, uavcan::MonotonicTime tx_deadline, uavcan::MonotonicTime blocking_deadline, uavcan::CanTxQueue::Qos qos,
              uavcan::CanIOFlags flags, uint8_t iface_mask);
 	int add_subscriber(uavcan::BaseSubscriber* suber){return this->_node.add_subscriber(suber);}
+	void publishGim6010Command(float position, float velocity, float torque) {
+
+		command.timestamp = hrt_absolute_time();
+		command.position[0] = position;
+		command.velocity[0] = velocity;
+		command.torque[0] = torque;
+		_command_pub.publish(command);
+   	 }
 
 
 private:
@@ -76,14 +84,14 @@ private:
 	uORB::SubscriptionInterval	_parameter_update_sub{ORB_ID(parameter_update), 1_s};
 	// uORB::Subscription _param_request_sub{ORB_ID(uavcan_parameter_request)};
 
-
 	px4::atomic_bool	_task_should_exit{false};	///< flag to indicate to tear down the CAN driver
 
-
+	uORB::Publication<gim6010_command_s> _command_pub{ORB_ID(gim6010_command)};
+    	gim6010_command_s command;
 
 
 	//mixer
 	VulcanMixingInterfaceTest _test_motor;
 	VulcanMixingInterfaceM3508 _m3508_motor;
-
+	VulcanMixingInterfaceGIM6010 _gim6010_motor;
 };
