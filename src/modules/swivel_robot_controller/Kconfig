@@ -1,0 +1,6 @@
+menuconfig MODULES_SWIVEL_ROBOT_CONTROLLER
+	bool "swivel_robot_controller"
+	default n
+	depends on MODULES_CONTROL_ALLOCATOR
+	---help---
+		Enable support for control of differential drive rovers

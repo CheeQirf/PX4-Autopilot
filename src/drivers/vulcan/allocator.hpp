@@ -51,8 +51,8 @@ struct AllocatorSynchronizer {
 };
 
 struct Allocator : public uavcan::HeapBasedPoolAllocator<uavcan::MemPoolBlockSize, AllocatorSynchronizer> {
-	static constexpr unsigned CapacitySoftLimit = 250;
-	static constexpr unsigned CapacityHardLimit = 500;
+	static constexpr unsigned CapacitySoftLimit = 500;
+	static constexpr unsigned CapacityHardLimit = 1000;
 
 	Allocator() :
 		uavcan::HeapBasedPoolAllocator<uavcan::MemPoolBlockSize, AllocatorSynchronizer>(CapacitySoftLimit, CapacityHardLimit)

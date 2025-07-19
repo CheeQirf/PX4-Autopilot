@@ -126,8 +126,8 @@ void VulcanMixingInterfaceM3508::data_sub_cb(const uavcan::CanRxFrame& msg)
 bool VulcanMixingInterfaceM3508::updateOutputs(bool stop_motors, uint16_t outputs[MAX_ACTUATORS],
 			   unsigned num_outputs, unsigned num_control_groups_updated)
 {
-	printf("R:%f\n",(double)_current_speed_rpm[1]);
-	printf("A:%f,\n",(double)_actual_current_ma[1]);
+	// printf("R:%f\n",(double)_current_speed_rpm[1]);
+	// printf("A:%f,\n",(double)_actual_current_ma[1]);
 	if(_m3508_enable == 0) {
         	return true;
    	}
@@ -237,7 +237,7 @@ void VulcanMixingInterfaceM3508::updateParams() {
 
 void VulcanMixingInterfaceM3508::print_info()
 {
-	printf("MA:%f\n",(double)_actual_current_ma[1]);
+	//printf("MA:%f\n",(double)_actual_current_ma[1]);
 }
 
 
@@ -260,10 +260,9 @@ VulcanMixingInterfaceGIM6010::VulcanMixingInterfaceGIM6010(VulcanNode* node,pthr
       _suber(vulcan_interface_gim6010_catchfn,CbBinder(this,&VulcanMixingInterfaceGIM6010::data_sub_cb))
 {
 	this->_node->add_subscriber(&_suber);
-	for (unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i) {
-		_node_ids[i] = i;
-    	}
-	// ScheduleOnInterval(100_ms);
+	// for (unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i) {
+	// 	_node_ids[i] = i;
+    	// }
 
 	memset(&_feedback,0,sizeof(_feedback));
 
@@ -271,26 +270,24 @@ VulcanMixingInterfaceGIM6010::VulcanMixingInterfaceGIM6010(VulcanNode* node,pthr
 void VulcanMixingInterfaceGIM6010::Run()
 {
 	pthread_mutex_lock(&_node_mutex);
-	if(first_in_flag){
 
-		first_in_flag = 0;
-		for(unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i){
-			send_axis_state(i, 8);
-			send_control_mode(i, 3);//位置控制，位置滤波模式
-		}
-	}
+	if (!init_commands_sent) {
+            for(unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i){
+		    send_linear_count(i,0);//多圈编码器计数值设置为0
+                    send_axis_state(i, 8);//闭环控制
+                    send_control_mode(i, 3);//位置控制，位置滤波模式
+            }
+            init_commands_sent = true;
+        }
 
-
-
-	//订阅和发布消息
 	gim6010_command_s cmd;
 	if(_command_sub.update(&cmd)){
-		for(unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i){
-			float position_setpoint = cmd.position[i];
+		  for(unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i){
+			float position_setpoint = cmd.position[i]/0.785398f;//弧度转为实际的turns
 			int16_t velocity_setpoint = cmd.velocity[i];
 			int16_t torque_setpoint = cmd.torque[i];
 			send_setpoint(i,position_setpoint,velocity_setpoint,torque_setpoint);
-		}
+		  }
 	}
 	pthread_mutex_unlock(&_node_mutex);
 }
@@ -328,12 +325,13 @@ void VulcanMixingInterfaceGIM6010::data_sub_cb(const uavcan::CanRxFrame& msg)
 void VulcanMixingInterfaceGIM6010::send_axis_state(uint8_t motor_idx, uint8_t state)
 {
 	uavcan::CanFrame frame;
-	frame.id = (_node_ids[motor_idx]<<5) | 0x007;
+	//frame.id = (_node_ids[motor_idx]<<5) | 0x007;
+	frame.id = (motor_idx<<5) | 0x007;
 	frame.dlc = 4;
 	uint32_t state_val = state;
     	memcpy(&frame.data[0], &state_val, sizeof(uint32_t));
 	_node->send(frame,
-	    uavcan::MonotonicTime::fromMSec(1),
+	    uavcan::MonotonicTime::fromMSec(2000),
 	    uavcan::MonotonicTime::fromMSec(1),
  	    uavcan::CanTxQueue::Qos::Persistent,
 	    0,
@@ -342,14 +340,15 @@ void VulcanMixingInterfaceGIM6010::send_axis_state(uint8_t motor_idx, uint8_t st
 void VulcanMixingInterfaceGIM6010::send_control_mode(uint8_t motor_idx, uint8_t input_mode)
 {
     uavcan::CanFrame frame;
-    frame.id = (_node_ids[motor_idx] << 5) | 0x00B;
+   // frame.id = (_node_ids[motor_idx] << 5) | 0x00B;
+    frame.id = (motor_idx << 5) | 0x00B;
     frame.dlc = 8;
     uint32_t control_mode_val = 3; // 固定为位置控制模式
     uint32_t input_mode_val = input_mode;
     memcpy(&frame.data[0], &control_mode_val, sizeof(uint32_t));
     memcpy(&frame.data[4], &input_mode_val, sizeof(uint32_t));
     _node->send(frame,
-	uavcan::MonotonicTime::fromMSec(1),
+	uavcan::MonotonicTime::fromMSec(2000),
 	uavcan::MonotonicTime::fromMSec(1),
 	uavcan::CanTxQueue::Qos::Persistent,
 	0,
@@ -358,16 +357,29 @@ void VulcanMixingInterfaceGIM6010::send_control_mode(uint8_t motor_idx, uint8_t 
 void VulcanMixingInterfaceGIM6010::send_setpoint(uint8_t motor_idx, float position,int16_t velocity,int16_t torque)
 {
     uavcan::CanFrame frame;
-    frame.id = (_node_ids[motor_idx] << 5) | 0x00C;
+    //frame.id = (_node_ids[motor_idx] << 5) | 0x00C;
+    frame.id = (motor_idx << 5) | 0x00C;
     frame.dlc = 8;
     memcpy(&frame.data[0], &position, sizeof(float));
     memcpy(&frame.data[4], &velocity, sizeof(int16_t));
     memcpy(&frame.data[6], &torque, sizeof(int16_t));
     _node->send(frame,
-	uavcan::MonotonicTime::fromMSec(1),
+	uavcan::MonotonicTime::fromMSec(2000),
 	uavcan::MonotonicTime::fromMSec(1),
 	uavcan::CanTxQueue::Qos::Persistent,
 	0,
 	1);
 }
-
+void VulcanMixingInterfaceGIM6010::send_linear_count(uint8_t motor_idx,int32_t count)
+{
+    uavcan::CanFrame frame;
+    frame.id =  (motor_idx << 5) | 0x019;
+    frame.dlc = 4;
+    memcpy(&frame.data[0], &count, sizeof(int32_t));
+    _node->send(frame,
+	uavcan::MonotonicTime::fromMSec(2000),
+	uavcan::MonotonicTime::fromMSec(1),
+	uavcan::CanTxQueue::Qos::Persistent,
+	0,
+	1);
+}

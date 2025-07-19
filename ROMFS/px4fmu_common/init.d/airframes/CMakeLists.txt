@@ -90,7 +90,6 @@ if(CONFIG_MODULES_MC_RATE_CONTROL)
 
 		# [11000, 11999] Hexa Cox
 		11001_hexa_cox
-
 		# [12000, 12999] Octo Cox
 		12001_octo_cox
 
@@ -156,4 +155,12 @@ if(CONFIG_MODULES_UUV_ATT_CONTROL)
 		60001_uuv_hippocampus
 		60002_uuv_bluerov2_heavy
 	)
+endif()
+
+if(CONFIG_MODULES_SWIVEL_ROBOT_CONTROLLER)
+	px4_add_romfs_files(
+		11408_duo_lun
+
+	)
+
 endif()

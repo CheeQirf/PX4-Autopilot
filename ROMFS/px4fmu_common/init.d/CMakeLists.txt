@@ -110,3 +110,11 @@ if(CONFIG_MODULES_TEMPERATURE_COMPENSATION)
 		rc.thermal_cal
 	)
 endif()
+
+
+##our duo lun for robocon
+if(CONFIG_MODULES_SWIVEL_ROBOT_CONTROLLER)
+	px4_add_romfs_files(
+		rc.duolun_defaults
+	)
+endif()

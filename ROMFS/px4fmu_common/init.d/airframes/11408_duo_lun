@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# @name DuoLun
+#
+# @type DuoLun
+# @class Duolun
+#
+# @output Motor1 motor1
+# @output Motor2 motor2
+# @output Motor3 motor3
+# @output Motor4 motor4
+#
+# @maintainer Yikang Liu
+#
+# @board bitcraze_crazyflie exclude
+#
+
+. ${R}etc/init.d/rc.duolun_defaults

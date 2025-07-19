@@ -126,7 +126,8 @@ class VulcanMixingInterfaceGIM6010 : public px4::ScheduledWorkItem, public Modul
 {
 
 private:
-	uint8_t first_in_flag = 1;
+	bool init_commands_sent = false;
+	//uint8_t first_in_flag = 1;
 	friend class VulcanNode;
 	VulcanNode* _node;
 	pthread_mutex_t &_node_mutex;
@@ -139,8 +140,10 @@ private:
 	void send_axis_state(uint8_t motor_idx, uint8_t state);
 	void send_control_mode(uint8_t motor_idx, uint8_t input_mode);
    	void send_setpoint(uint8_t motor_idx, float position,int16_t velocity,int16_t torque);
-	uint8_t _node_ids[NUM_GIM6010_MOTORS_PER_FRAME];
+	void send_linear_count(uint8_t motor_idx,int32_t count);
+	//uint8_t _node_ids[NUM_GIM6010_MOTORS_PER_FRAME];
 	//uint8_t _current_input_mode[NUM_GIM6010_MOTORS_PER_FRAME];
+
 public:
 	void data_sub_cb(const uavcan::CanRxFrame& msg);
 

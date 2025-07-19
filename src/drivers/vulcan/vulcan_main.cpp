@@ -27,7 +27,7 @@ VulcanNode::VulcanNode(uavcan::ICanDriver& can_driver, uavcan::ISystemClock& sys
 	}
 	_test_motor.mixingOutput().setMaxTopicUpdateRate(1000000 / 400);
 	_m3508_motor.mixingOutput().setMaxTopicUpdateRate(1000000 / 400);
-	_gim6010_motor.ScheduleOnInterval(100_ms);
+
 }
 
 // 析构函数
@@ -103,8 +103,9 @@ void VulcanNode::Run() {
 
 		_node_init = true;
 		    _instance->_test_motor.ScheduleNow();
-		    _instance->_m3508_motor.ScheduleNow();
-		//     _instance->_gim6010_motor.ScheduleNow();
+		    //_instance->_m3508_motor.ScheduleNow();
+		     _instance->_gim6010_motor.ScheduleNow();
+		     _gim6010_motor.ScheduleOnInterval(100_ms);
     }
 
 	perf_begin(_cycle_perf);
@@ -327,8 +328,10 @@ extern "C" __EXPORT int vulcan_main(int argc, char *argv[])
 	 */
 	// int node_arg = !std::strcmp(argv[1], "reset") ? 2 : 3;
 
+
 	if (!std::strcmp(argv[1],"gim6010")){
-		inst->publishGim6010Command(2.0f, 0.0f, 0.0f);
+		// printf("success\n");
+		inst->publishGim6010Command(-1.57f,0.0f, 0.0f);
 		::exit(0);
 	}
 
