@@ -16,6 +16,8 @@
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
+#include <uORB/topics/gim6010_command.h>
+#include <uORB/topics/actuator_motors.h>
 
 
 class swivelDrive : public ModuleBase<swivelDrive>, public ModuleParams,
@@ -51,19 +53,21 @@ private:
 
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Publication<differential_drive_setpoint_s> _differential_drive_setpoint_pub{ORB_ID(differential_drive_setpoint)};
+	uORB::Publication<gim6010_command_s> _gim6010_command_pub{ORB_ID(gim6010_command)};
+	uORB::Publication<actuator_motors_s> _actuator_motors_pub{ORB_ID(actuator_motors)};
 
 	bool _manual_driving = false;
 	bool _mission_driving = false;
 	bool _acro_driving = false;
 	hrt_abstime _time_stamp_last{0}; /**< time stamp when task was last updated */
 
-
+	float youmen{0.f};
 	float _max_speed{0.f};
 	float _max_angular_velocity{0.f};
 
 	float _desired_global_yaw{0.0f}; // 存储目标偏航角，初始化为0
-    int _previous_mode{0};           // 存储上一帧的模式
-
+    	int _previous_mode{0};           // 存储上一帧的模式
+	float lunzi_jiaodu[5];
 	// DEFINE_PARAMETERS(
 	// 	(ParamFloat<px4::params::RDD_ANG_SCALE>) _param_rdd_ang_velocity_scale,
 	// 	(ParamFloat<px4::params::RDD_SPEED_SCALE>) _param_rdd_speed_scale,

@@ -5,7 +5,7 @@
 
 #include <matrix/math.hpp> // 用于四元数转欧拉角、cosf/sinf
 #include <drivers/drv_hrt.h> // 用于 hrt_absolute_time()
-
+using namespace time_literals;
 // 构造函数：初始化参数和订阅
 swivelDrive::swivelDrive() :
 	ModuleParams(nullptr),
@@ -18,7 +18,7 @@ swivelDrive::swivelDrive() :
 // 初始化模块：启动定时任务调度，指定任务周期为 5 毫秒（100Hz）
 bool swivelDrive::init()
 {
-	ScheduleOnInterval(5000);  // 调度周期：500Hz
+	ScheduleOnInterval(1_ms);  // 调度周期：500Hz
 	return true;
 }
 
@@ -48,8 +48,8 @@ void swivelDrive::Run()
 	float _current_global_vx = 0.0f;
     float _current_global_vy = 0.0f;
     float _current_global_yaw = 0.0f;
-	float youmen = 0.f;
-	float lunzi_jiaodu[5] = {0.f};
+
+
 	float degrees = 0.f;
 	bool mode = 0;//mode = 0:前进模式  mode = 1:旋转模式
 
@@ -171,6 +171,8 @@ void swivelDrive::Run()
 
 	float wheel_powers[4];
 
+	mode = 3;///1111111111111111111111111111111111111111111111111111111111111111111111111
+
 	if(mode == 0){
 
 		// 4. 当前轮子的转向角 (与机器人X轴的夹角，单位：弧度)
@@ -193,16 +195,55 @@ void swivelDrive::Run()
 		// --- 旋转模式 ---
         // 在旋转模式下，轮子角度已经设定好，我们只需要给所有轮子相同的动力
         // 动力大小由油门杆决定
-    	const float rotation_power = DESIRED_GLOBAL_VX;
+    		const float rotation_power = DESIRED_GLOBAL_VX;
 
-        for (int i = 0; i < 4; ++i) {
-            wheel_powers[i] = rotation_power;
-        }
+        	for (int i = 0; i < 4; ++i) {
+            		wheel_powers[i] = rotation_power;
+        	}
 	}
 
-
+	for (int i = 0; i < 4; ++i) {
+            	wheel_powers[i] = youmen;
+        }
 
 	(void)mode;
+
+	// --- 1. 发布舵机角度指令 (gim6010_command) ---
+	//    (已使用正确的字段名 'position' 进行修正)
+	gim6010_command_s gim_cmd{};
+	gim_cmd.timestamp = hrt_absolute_time();
+
+	// 将计算出的轮子角度 (lunzi_jiaodu) 填充到消息的 'position' 数组中
+	gim_cmd.position[0] = lunzi_jiaodu[1];
+	gim_cmd.position[1] = lunzi_jiaodu[2];
+	gim_cmd.position[2] = lunzi_jiaodu[3];
+	gim_cmd.position[3] = lunzi_jiaodu[4];
+
+	// 您可以根据需要选择性地填充速度和力矩，如果不需要则保持默认值0即可
+	// gim_cmd.velocity[0] = ...;
+	// gim_cmd.torque[0] = ...;
+
+	// 使用在 .hpp 中定义的 publisher 发布消息
+	_gim6010_command_pub.publish(gim_cmd);
+
+	// printf("%f %f %f %f\n",(double)lunzi_jiaodu[1],(double)lunzi_jiaodu[2],(double)lunzi_jiaodu[3],(double)lunzi_jiaodu[4]);
+	// --- 2. 发布电机动力指令 (actuator_motors) ---
+	actuator_motors_s motors_cmd{};
+	motors_cmd.timestamp = hrt_absolute_time();
+	motors_cmd.timestamp_sample = motors_cmd.timestamp;
+	motors_cmd.reversible_flags = 0b00001111;
+
+	for (int i = 0; i < 4; ++i) {
+		motors_cmd.control[i] = wheel_powers[i];
+	}
+
+	for (int i = 4; i < actuator_motors_s::NUM_CONTROLS; ++i) {
+		motors_cmd.control[i] = NAN;
+	}
+
+	_actuator_motors_pub.publish(motors_cmd);
+
+
 //------------------------------------------------------------------------------------------------------------------------
 }
 

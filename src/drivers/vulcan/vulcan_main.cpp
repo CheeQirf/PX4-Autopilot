@@ -103,9 +103,9 @@ void VulcanNode::Run() {
 
 		_node_init = true;
 		    _instance->_test_motor.ScheduleNow();
-		    //_instance->_m3508_motor.ScheduleNow();
+		    _instance->_m3508_motor.ScheduleNow();
 		     _instance->_gim6010_motor.ScheduleNow();
-		     _gim6010_motor.ScheduleOnInterval(100_ms);
+		     _instance->_gim6010_motor.ScheduleOnInterval(4_ms);
     }
 
 	perf_begin(_cycle_perf);
@@ -330,7 +330,6 @@ extern "C" __EXPORT int vulcan_main(int argc, char *argv[])
 
 
 	if (!std::strcmp(argv[1],"gim6010")){
-		// printf("success\n");
 		inst->publishGim6010Command(-1.57f,0.0f, 0.0f);
 		::exit(0);
 	}
