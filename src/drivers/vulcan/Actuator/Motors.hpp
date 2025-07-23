@@ -20,6 +20,8 @@ const int16_t M3508_MIN_CURRENT = -16384;
 const uint16_t PX4_OUTPUT_MAX_VAL = 8191;
 const unsigned NUM_M3508_MOTORS_PER_FRAME = 4;
 const unsigned NUM_GIM6010_MOTORS_PER_FRAME = 4;
+const float POSITION_TOLERANCE = 0.05f;
+const uint32_t GIM6010_SEND_INTERVAL_US = 20000;
 class VulcanNode;
 
 
@@ -84,12 +86,12 @@ private:
 	hrt_abstime _last_update_outputs_time_us= 0;
 
 
-	float _speed_kp = 0.05f;
-	float _speed_ki = 0.00f;
-	float _speed_kd = 0.000f;
-	float _current_kp = 1.0f;
-	float _current_ki = 0.0f;
-	float _current_kd = 0.000f;
+	float _speed_kp[NUM_M3508_MOTORS_PER_FRAME];
+	float _speed_ki[NUM_M3508_MOTORS_PER_FRAME];
+	float _speed_kd[NUM_M3508_MOTORS_PER_FRAME];
+	float _current_kp[NUM_M3508_MOTORS_PER_FRAME];
+	float _current_ki[NUM_M3508_MOTORS_PER_FRAME];
+	float _current_kd[NUM_M3508_MOTORS_PER_FRAME];
 	int32_t _m3508_enable = 1; // 默认启用
 
 public:
@@ -127,30 +129,24 @@ class VulcanMixingInterfaceGIM6010 : public px4::ScheduledWorkItem, public Modul
 
 private:
 	bool init_commands_sent = false;
-	//uint8_t first_in_flag = 1;
 	friend class VulcanNode;
 	VulcanNode* _node;
 	pthread_mutex_t &_node_mutex;
-	//MixingOutput _mixing_output{"GIM6010", 8, *this, MixingOutput::SchedulingPolicy::Auto, false, false};
 
 	uORB::Subscription _command_sub{ORB_ID(gim6010_command)};
-	//uORB::SubscriptionInterval<gim6010_command_s> _command_sub{ORB_ID(gim6010_command),1_s};
     	uORB::Publication<gim6010_feed_back_s> _feedback_pub{ORB_ID(gim6010_feed_back)};
     	gim6010_feed_back_s _feedback;
 	void send_axis_state(uint8_t motor_idx, uint8_t state);
 	void send_control_mode(uint8_t motor_idx, uint8_t input_mode);
    	void send_setpoint(uint8_t motor_idx, float position,int16_t velocity,int16_t torque);
 	void send_linear_count(uint8_t motor_idx,int32_t count);
-	//uint8_t _node_ids[NUM_GIM6010_MOTORS_PER_FRAME];
-	//uint8_t _current_input_mode[NUM_GIM6010_MOTORS_PER_FRAME];
+	hrt_abstime _last_gim6010_send_time_us{0};
+
 
 public:
 	void data_sub_cb(const uavcan::CanRxFrame& msg);
 
 	VulcanMixingInterfaceGIM6010(VulcanNode* node,pthread_mutex_t &node_mutex);
-
-
-	//MixingOutput &mixingOutput() { return _mixing_output; }
 
 
 	typedef uavcan::MethodBinder < VulcanMixingInterfaceGIM6010 *,

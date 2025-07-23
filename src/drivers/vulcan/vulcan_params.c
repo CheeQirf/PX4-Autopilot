@@ -387,50 +387,172 @@ PARAM_DEFINE_INT32(VULCAN_SUB_BTN, 0);
  * @reboot_required true
  * @group M3508
  */
-PARAM_DEFINE_INT32(M3508_ENABLE, 1);
+PARAM_DEFINE_INT32(M3508_ENABLE, 1); // 此参数通常保持 M3508_ENABLE，因为它控制整体使能
 
 /**
- * M3508 motor speed controller proportional gain (Kp)
+ * M3508 motor 0 speed controller proportional gain (Kp)
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_SPEED_KP, 0.05);
+PARAM_DEFINE_FLOAT(M35_SPEED_KP_0, 0.05);
 
 /**
- * M3508 motor speed controller integral gain (Ki)
+ * M3508 motor 0 speed controller integral gain (Ki)
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_SPEED_KI, 0.00);
+PARAM_DEFINE_FLOAT(M35_SPEED_KI_0, 0.00);
 
 /**
- * M3508 motor speed controller derivative gain (Kd)
+ * M3508 motor 0 speed controller derivative gain (Kd)
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_SPEED_KD, 0.000);
+PARAM_DEFINE_FLOAT(M35_SPEED_KD_0, 0.000);
 
 /**
- * M3508 motor current controller proportional gain (Kp)
+ * M3508 motor 0 current controller proportional gain (Kp)
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_CURRENT_KP, 1.0);
+PARAM_DEFINE_FLOAT(M35_CURRENT_KP_0, 1.0);
 
 /**
- * M3508 motor current controller integral gain (Ki)
+ * M3508 motor 0 current controller integral gain (Ki)
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_CURRENT_KI, 0.0);
+PARAM_DEFINE_FLOAT(M35_CURRENT_KI_0, 0.0);
 
 /**
- * M3508 motor current controller derivative gain (Kd)
+ * M3508 motor 0 current controller derivative gain (Kd)
  *
  * @group M3508
  */
-PARAM_DEFINE_FLOAT(M3508_CURRENT_KD, 0.000);
+PARAM_DEFINE_FLOAT(M35_CURRENT_KD_0, 0.000);
 
+/**
+ * M3508 motor 1 speed controller proportional gain (Kp)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KP_1, 0.05);
 
+/**
+ * M3508 motor 1 speed controller integral gain (Ki)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KI_1, 0.00);
 
+/**
+ * M3508 motor 1 speed controller derivative gain (Kd)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KD_1, 0.000);
 
+/**
+ * M3508 motor 1 current controller proportional gain (Kp)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KP_1, 1.0);
+
+/**
+ * M3508 motor 1 current controller integral gain (Ki)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KI_1, 0.0);
+
+/**
+ * M3508 motor 1 current controller derivative gain (Kd)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KD_1, 0.000);
+
+/**
+ * M3508 motor 2 speed controller proportional gain (Kp)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KP_2, 0.05);
+
+/**
+ * M3508 motor 2 speed controller integral gain (Ki)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KI_2, 0.00);
+
+/**
+ * M3508 motor 2 speed controller derivative gain (Kd)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KD_2, 0.000);
+
+/**
+ * M3508 motor 2 current controller proportional gain (Kp)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KP_2, 1.0);
+
+/**
+ * M3508 motor 2 current controller integral gain (Ki)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KI_2, 0.0);
+
+/**
+ * M3508 motor 2 current controller derivative gain (Kd)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KD_2, 0.000);
+
+/**
+ * M3508 motor 3 speed controller proportional gain (Kp)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KP_3, 0.05);
+
+/**
+ * M3508 motor 3 speed controller integral gain (Ki)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KI_3, 0.00);
+
+/**
+ * M3508 motor 3 speed controller derivative gain (Kd)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_SPEED_KD_3, 0.000);
+
+/**
+ * M3508 motor 3 current controller proportional gain (Kp)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KP_3, 1.0);
+
+/**
+ * M3508 motor 3 current controller integral gain (Ki)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KI_3, 0.0);
+
+/**
+ * M3508 motor 3 current controller derivative gain (Kd)
+ *
+ * @group M3508
+ */
+PARAM_DEFINE_FLOAT(M35_CURRENT_KD_3, 0.000);
