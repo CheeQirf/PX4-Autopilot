@@ -20,8 +20,8 @@ const int16_t M3508_MIN_CURRENT = -16384;
 const uint16_t PX4_OUTPUT_MAX_VAL = 8191;
 const unsigned NUM_M3508_MOTORS_PER_FRAME = 4;
 const unsigned NUM_GIM6010_MOTORS_PER_FRAME = 4;
-const float POSITION_TOLERANCE = 0.05f;
-const uint32_t GIM6010_SEND_INTERVAL_US = 20000;
+const float POSITION_TOLERANCE = 0.01f;
+const uint32_t GIM6010_SEND_INTERVAL_US = 2000;
 class VulcanNode;
 
 
@@ -140,8 +140,8 @@ private:
 	void send_control_mode(uint8_t motor_idx, uint8_t input_mode);
    	void send_setpoint(uint8_t motor_idx, float position,int16_t velocity,int16_t torque);
 	void send_linear_count(uint8_t motor_idx,int32_t count);
-	hrt_abstime _last_gim6010_send_time_us{0};
-
+	hrt_abstime _last_gim6010_send_time_us[NUM_GIM6010_MOTORS_PER_FRAME];
+	uint8_t _current_motor_idx_to_send{0};
 
 public:
 	void data_sub_cb(const uavcan::CanRxFrame& msg);

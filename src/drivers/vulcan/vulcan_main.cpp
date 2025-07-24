@@ -105,7 +105,7 @@ void VulcanNode::Run() {
 		    //_instance->_test_motor.ScheduleNow();
 		    _instance->_m3508_motor.ScheduleNow();
 		     _instance->_gim6010_motor.ScheduleNow();
-		     _instance->_gim6010_motor.ScheduleOnInterval(20_ms);
+		     _instance->_gim6010_motor.ScheduleOnInterval(1_ms);
     }
 
 	perf_begin(_cycle_perf);

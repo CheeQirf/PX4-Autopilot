@@ -30,7 +30,7 @@ class VulcanNode: public px4::ScheduledWorkItem, public ModuleParams{
 	static constexpr unsigned FramePerSecond	= MaxBitRatePerSec / bitPerFrame;
 	static constexpr unsigned FramePerMSecond	= ((FramePerSecond / 1000) + 1);
 
-	static constexpr unsigned ScheduleIntervalMs		= 3;
+	static constexpr unsigned ScheduleIntervalMs		= 1;
 
 	static constexpr unsigned RxQueueLenPerIface	= FramePerMSecond * ScheduleIntervalMs; // At
 

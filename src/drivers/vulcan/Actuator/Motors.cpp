@@ -247,7 +247,7 @@ bool vulcan_interface_gim6010_catchfn(const uavcan::CanRxFrame& msg){
 		uint16_t node_id = (msg.id>>5)& 0x3F;
 		uint8_t cmd_id = msg.id & 0x1F;
 		if(node_id<=3)
-			return (cmd_id ==0x009 || cmd_id==0x01C ||cmd_id ==0x00A);
+			return (cmd_id ==0x009 || cmd_id==0x01C);
 	}
 	return false;
 }
@@ -275,24 +275,31 @@ void VulcanMixingInterfaceGIM6010::Run()
             init_commands_sent = true;
         }
 
-	hrt_abstime current_time_us = hrt_absolute_time();
-	if(current_time_us - _last_gim6010_send_time_us < GIM6010_SEND_INTERVAL_US){
-		pthread_mutex_unlock(&_node_mutex);
-		return;
-
-	}
 	gim6010_command_s cmd;
 	if(_command_sub.update(&cmd)){
-		  for(unsigned i=0;i<NUM_GIM6010_MOTORS_PER_FRAME;++i){
-			float position_setpoint = cmd.position[i]/0.785398f;//弧度转为实际的turns
-			int16_t velocity_setpoint = cmd.velocity[i];
-			int16_t torque_setpoint = cmd.torque[i];
-			if(fabsf(_feedback.position[i] - position_setpoint) < POSITION_TOLERANCE) {
-				continue;
-			}
-			send_setpoint(i,position_setpoint,velocity_setpoint,torque_setpoint);
-		  }
-	}
+        hrt_abstime current_time_us = hrt_absolute_time();
+
+
+        unsigned i = _current_motor_idx_to_send;
+
+
+        if(current_time_us - _last_gim6010_send_time_us[i] >= GIM6010_SEND_INTERVAL_US){
+
+            if(fabsf(_feedback.position[i] - (cmd.position[i]/0.785398f)) < POSITION_TOLERANCE) {
+                _last_gim6010_send_time_us[i] = current_time_us;
+            } else {
+
+                float position_setpoint = cmd.position[i]/0.785398f;//弧度转为实际的turns
+                int16_t velocity_setpoint = cmd.velocity[i];
+                int16_t torque_setpoint = cmd.torque[i];
+                send_setpoint(i,position_setpoint,velocity_setpoint,torque_setpoint);
+                _last_gim6010_send_time_us[i] = current_time_us;
+            }
+        }
+
+
+        _current_motor_idx_to_send = (_current_motor_idx_to_send + 1) % NUM_GIM6010_MOTORS_PER_FRAME;
+    }
 	pthread_mutex_unlock(&_node_mutex);
 }
 void VulcanMixingInterfaceGIM6010::data_sub_cb(const uavcan::CanRxFrame& msg)
@@ -312,13 +319,14 @@ void VulcanMixingInterfaceGIM6010::data_sub_cb(const uavcan::CanRxFrame& msg)
 			float torque;
 			memcpy(&torque, &msg.data[4], sizeof(float));
 			_feedback.torque[node_id] = torque;
-		}else if (cmd_id==0x00A){
-			int32_t encoder_muti,encoder_single;
-			memcpy(&encoder_muti,&msg.data[0],sizeof(int32_t));
-			memcpy(&encoder_single,&msg.data[4],sizeof(int32_t));
-			_feedback.encoder_muti[node_id] = encoder_muti;
-			_feedback.encoder_single[node_id] = encoder_single;
 		}
+		// else if (cmd_id==0x00A){
+		// 	int32_t encoder_muti,encoder_single;
+		// 	memcpy(&encoder_muti,&msg.data[0],sizeof(int32_t));
+		// 	memcpy(&encoder_single,&msg.data[4],sizeof(int32_t));
+		// 	_feedback.encoder_muti[node_id] = encoder_muti;
+		// 	_feedback.encoder_single[node_id] = encoder_single;
+		// }
 	}
 
 	_feedback.timestamp = hrt_absolute_time();
@@ -353,7 +361,7 @@ void VulcanMixingInterfaceGIM6010::send_control_mode(uint8_t motor_idx, uint8_t 
 	uavcan::MonotonicTime(),
 	uavcan::CanTxQueue::Qos::Persistent,
 	0,
-	1);
+	1);chassis
 }
 void VulcanMixingInterfaceGIM6010::send_setpoint(uint8_t motor_idx, float position,int16_t velocity,int16_t torque)
 {
